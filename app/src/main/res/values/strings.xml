@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Subly</string>
+
+    <!-- Notification strings -->
+    <string name="notification_channel_name">Subscription Reminders</string>
+    <string name="notification_channel_description">Notifications for upcoming subscription payments</string>
+    <string name="notification_title_single">Subscription Payment Due</string>
+    <string name="notification_title_multiple">%d Subscriptions Due</string>
+    <string name="notification_message_today">%s is due today</string>
+    <string name="notification_message_tomorrow">%s is due tomorrow</string>
+    <string name="notification_message_days">%1$s is due in %2$d days</string>
+    <string name="notification_group_summary">%d upcoming subscription payments</string>
+    <string name="notification_permission_required">Notification permission required</string>
+    <string name="notification_permission_explanation">Subly needs notification permission to remind you about upcoming subscription payments. You can customize when you receive these reminders in the settings.</string>
+</resources>
