@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import net.cynreub.subly.notification.NotificationHelper
 import net.cynreub.subly.ui.components.SublyBottomBar
+import net.cynreub.subly.ui.components.SublyTopBar
 import net.cynreub.subly.ui.navigation.NavDestination
 import net.cynreub.subly.ui.navigation.SublyNavHost
 import net.cynreub.subly.ui.theme.SublyTheme
@@ -48,6 +49,9 @@ fun SublyApp(subscriptionIdFromNotification: String? = null) {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        topBar = {
+            SublyTopBar()
+        },
         bottomBar = {
             SublyBottomBar(navController = navController)
         }
