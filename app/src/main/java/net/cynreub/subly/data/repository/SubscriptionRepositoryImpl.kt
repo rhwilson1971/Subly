@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.map
 import net.cynreub.subly.data.local.dao.SubscriptionDao
 import net.cynreub.subly.data.mapper.toDomain
 import net.cynreub.subly.data.mapper.toEntity
+import net.cynreub.subly.data.remote.firestore.SubscriptionSyncService
 import net.cynreub.subly.domain.model.Subscription
 import net.cynreub.subly.domain.repository.SubscriptionRepository
 import java.time.LocalDate
@@ -12,7 +13,8 @@ import java.util.UUID
 import javax.inject.Inject
 
 class SubscriptionRepositoryImpl @Inject constructor(
-    private val subscriptionDao: SubscriptionDao
+    private val subscriptionDao: SubscriptionDao,
+    private val syncService: SubscriptionSyncService
 ) : SubscriptionRepository {
 
     override fun getAllSubscriptions(): Flow<List<Subscription>> {
@@ -50,17 +52,21 @@ class SubscriptionRepositoryImpl @Inject constructor(
 
     override suspend fun insertSubscription(subscription: Subscription) {
         subscriptionDao.insertSubscription(subscription.toEntity())
+        syncService.upsert(subscription)
     }
 
     override suspend fun updateSubscription(subscription: Subscription) {
         subscriptionDao.updateSubscription(subscription.toEntity())
+        syncService.upsert(subscription)
     }
 
     override suspend fun deleteSubscription(subscription: Subscription) {
         subscriptionDao.deleteSubscription(subscription.toEntity())
+        syncService.delete(subscription.id)
     }
 
     override suspend fun deleteSubscriptionById(id: UUID) {
         subscriptionDao.deleteSubscriptionById(id.toString())
+        syncService.delete(id)
     }
 }

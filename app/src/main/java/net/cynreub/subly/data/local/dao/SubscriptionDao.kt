@@ -40,4 +40,7 @@ interface SubscriptionDao {
 
     @Query("SELECT * FROM subscriptions WHERE isActive = 1 AND nextBillingDate <= :date ORDER BY nextBillingDate ASC")
     fun getUpcomingSubscriptions(date: LocalDate): Flow<List<SubscriptionEntity>>
+
+    @Query("SELECT COUNT(*) FROM subscriptions")
+    suspend fun getCount(): Int
 }

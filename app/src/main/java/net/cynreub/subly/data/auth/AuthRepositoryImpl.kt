@@ -3,12 +3,14 @@ package net.cynreub.subly.data.auth
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import kotlinx.coroutines.tasks.await
+import net.cynreub.subly.data.remote.firestore.FirestoreSyncOrchestrator
 import net.cynreub.subly.domain.model.User
 import net.cynreub.subly.domain.repository.AuthRepository
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val syncOrchestrator: FirestoreSyncOrchestrator
 ) : AuthRepository {
 
     override val currentUser: User?
@@ -27,6 +29,7 @@ class AuthRepositoryImpl @Inject constructor(
         return try {
             val result = auth.signInWithEmailAndPassword(email, password).await()
             val user = result.user!!
+            syncOrchestrator.initialPullIfEmpty(user.uid)
             Result.success(User(uid = user.uid, email = user.email, displayName = user.displayName))
         } catch (e: Exception) {
             Result.failure(e)
@@ -37,6 +40,7 @@ class AuthRepositoryImpl @Inject constructor(
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val user = result.user!!
+            syncOrchestrator.initialPullIfEmpty(user.uid)
             Result.success(User(uid = user.uid, email = user.email, displayName = user.displayName))
         } catch (e: Exception) {
             Result.failure(e)
@@ -48,6 +52,7 @@ class AuthRepositoryImpl @Inject constructor(
             val credential = GoogleAuthProvider.getCredential(idToken, null)
             val result = auth.signInWithCredential(credential).await()
             val user = result.user!!
+            syncOrchestrator.initialPullIfEmpty(user.uid)
             Result.success(User(uid = user.uid, email = user.email, displayName = user.displayName))
         } catch (e: Exception) {
             Result.failure(e)
@@ -57,4 +62,6 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun signOut() {
         auth.signOut()
     }
+
+    override suspend fun syncOnLogin(uid: String) = syncOrchestrator.initialPullIfEmpty(uid)
 }
