@@ -8,9 +8,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import net.cynreub.subly.notification.NotificationHelper
 import net.cynreub.subly.ui.components.SublyBottomBar
@@ -25,39 +30,45 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Extract subscription ID from notification intent
         val subscriptionIdFromNotification = intent?.getStringExtra(NotificationHelper.EXTRA_SUBSCRIPTION_ID)
 
         setContent {
             SublyTheme {
-                SublyApp(subscriptionIdFromNotification = subscriptionIdFromNotification)
+                var isLoggedIn by remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
+                SublyApp(
+                    isLoggedIn = isLoggedIn,
+                    onAuthSuccess = { isLoggedIn = true },
+                    subscriptionIdFromNotification = subscriptionIdFromNotification
+                )
             }
         }
     }
 }
 
 @Composable
-fun SublyApp(subscriptionIdFromNotification: String? = null) {
+fun SublyApp(
+    isLoggedIn: Boolean,
+    onAuthSuccess: () -> Unit,
+    subscriptionIdFromNotification: String? = null
+) {
     val navController = rememberNavController()
-
-    // Navigate to subscription detail if opened from notification
-    LaunchedEffect(subscriptionIdFromNotification) {
-        if (subscriptionIdFromNotification != null) {
-            navController.navigate(NavDestination.SubscriptionDetail.createRoute(subscriptionIdFromNotification))
-        }
-    }
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    val isAuthRoute = currentRoute == NavDestination.Login.route || currentRoute == NavDestination.Register.route
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            SublyTopBar()
+            if (!isAuthRoute) SublyTopBar()
         },
         bottomBar = {
-            SublyBottomBar(navController = navController)
+            if (!isAuthRoute) SublyBottomBar(navController = navController)
         }
     ) { innerPadding ->
         SublyNavHost(
             navController = navController,
+            isLoggedIn = isLoggedIn,
+            onAuthSuccess = onAuthSuccess,
             modifier = Modifier.padding(innerPadding)
         )
     }

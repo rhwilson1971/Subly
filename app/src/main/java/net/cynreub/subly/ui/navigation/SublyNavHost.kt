@@ -7,6 +7,8 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import net.cynreub.subly.ui.auth.LoginScreen
+import net.cynreub.subly.ui.auth.RegisterScreen
 import net.cynreub.subly.ui.home.HomeScreen
 import net.cynreub.subly.ui.subscriptions.SubscriptionsScreen
 import net.cynreub.subly.ui.subscriptions.addedit.AddEditSubscriptionScreen
@@ -18,13 +20,41 @@ import net.cynreub.subly.ui.settings.SettingsScreen
 @Composable
 fun SublyNavHost(
     navController: NavHostController,
+    isLoggedIn: Boolean,
+    onAuthSuccess: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     NavHost(
         navController = navController,
-        startDestination = NavDestination.Home.route,
+        startDestination = if (isLoggedIn) NavDestination.Home.route else NavDestination.Login.route,
         modifier = modifier
     ) {
+        // Auth graph
+        composable(NavDestination.Login.route) {
+            LoginScreen(
+                onNavigateToRegister = { navController.navigate(NavDestination.Register.route) },
+                onAuthSuccess = {
+                    onAuthSuccess()
+                    navController.navigate(NavDestination.Home.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(NavDestination.Register.route) {
+            RegisterScreen(
+                onNavigateToLogin = { navController.popBackStack() },
+                onAuthSuccess = {
+                    onAuthSuccess()
+                    navController.navigate(NavDestination.Home.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // Main graph
         composable(NavDestination.Home.route) {
             HomeScreen(
                 onNavigateToSubscriptionDetail = { subscriptionId ->

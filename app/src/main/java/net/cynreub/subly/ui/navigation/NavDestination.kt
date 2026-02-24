@@ -69,6 +69,16 @@ sealed class NavDestination(
         }
     }
 
+    data object Login : NavDestination(
+        route = "login",
+        title = "Login"
+    )
+
+    data object Register : NavDestination(
+        route = "register",
+        title = "Register"
+    )
+
     companion object {
         val bottomNavItems = listOf(Home, Subscriptions, PaymentMethods, Settings)
     }
