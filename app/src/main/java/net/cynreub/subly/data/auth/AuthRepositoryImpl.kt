@@ -29,7 +29,12 @@ class AuthRepositoryImpl @Inject constructor(
         return try {
             val result = auth.signInWithEmailAndPassword(email, password).await()
             val user = result.user!!
-            syncOrchestrator.initialPullIfEmpty(user.uid)
+            try {
+                syncOrchestrator.initialPullIfEmpty(user.uid)
+            } catch (e: Exception) {
+                // Log error but allow login to proceed
+                e.printStackTrace()
+            }
             Result.success(User(uid = user.uid, email = user.email, displayName = user.displayName))
         } catch (e: Exception) {
             Result.failure(e)
@@ -40,7 +45,12 @@ class AuthRepositoryImpl @Inject constructor(
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val user = result.user!!
-            syncOrchestrator.initialPullIfEmpty(user.uid)
+            try {
+                syncOrchestrator.initialPullIfEmpty(user.uid)
+            } catch (e: Exception) {
+                // Log error but allow login to proceed
+                e.printStackTrace()
+            }
             Result.success(User(uid = user.uid, email = user.email, displayName = user.displayName))
         } catch (e: Exception) {
             Result.failure(e)
@@ -52,7 +62,12 @@ class AuthRepositoryImpl @Inject constructor(
             val credential = GoogleAuthProvider.getCredential(idToken, null)
             val result = auth.signInWithCredential(credential).await()
             val user = result.user!!
-            syncOrchestrator.initialPullIfEmpty(user.uid)
+            try {
+                syncOrchestrator.initialPullIfEmpty(user.uid)
+            } catch (e: Exception) {
+                // Log error but allow login to proceed
+                e.printStackTrace()
+            }
             Result.success(User(uid = user.uid, email = user.email, displayName = user.displayName))
         } catch (e: Exception) {
             Result.failure(e)
@@ -63,5 +78,11 @@ class AuthRepositoryImpl @Inject constructor(
         auth.signOut()
     }
 
-    override suspend fun syncOnLogin(uid: String) = syncOrchestrator.initialPullIfEmpty(uid)
+    override suspend fun syncOnLogin(uid: String) {
+        try {
+            syncOrchestrator.initialPullIfEmpty(uid)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }

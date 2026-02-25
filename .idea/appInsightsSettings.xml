@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="net.cynreub.subly" />
+                  <option name="mobileSdkAppId" value="1:1052724052942:android:fdf20c96304ec3be77e19f" />
+                  <option name="projectId" value="subly-b5b5b" />
+                  <option name="projectNumber" value="1052724052942" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
