@@ -1,11 +1,13 @@
 package net.cynreub.subly.ui.subscriptions.detail
 
+import net.cynreub.subly.domain.model.Category
 import net.cynreub.subly.domain.model.PaymentMethod
 import net.cynreub.subly.domain.model.Subscription
 
 data class SubscriptionDetailUiState(
     // Core Data
     val subscription: Subscription? = null,
+    val category: Category? = null,
     val paymentMethod: PaymentMethod? = null,
 
     // UI State
@@ -15,6 +17,7 @@ data class SubscriptionDetailUiState(
     // Action States
     val isDeleting: Boolean = false,
     val isMarkingAsPaid: Boolean = false,
+    val isTogglingActive: Boolean = false,
     val showDeleteDialog: Boolean = false,
 
     // Success State (for navigation)

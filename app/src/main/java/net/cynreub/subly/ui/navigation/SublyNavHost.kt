@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import net.cynreub.subly.ui.auth.LoginScreen
 import net.cynreub.subly.ui.auth.RegisterScreen
+import net.cynreub.subly.ui.categories.CategoriesScreen
 import net.cynreub.subly.ui.home.HomeScreen
 import net.cynreub.subly.ui.subscriptions.SubscriptionsScreen
 import net.cynreub.subly.ui.subscriptions.addedit.AddEditSubscriptionScreen
@@ -62,6 +63,12 @@ fun SublyNavHost(
                 },
                 onNavigateToAddSubscription = {
                     navController.navigate(NavDestination.AddEditSubscription.createRoute())
+                },
+                onNavigateToFilter = { filterArg ->
+                    navController.navigate(NavDestination.FilteredSubscriptions.createRoute(filterArg))
+                },
+                onNavigateToCategories = {
+                    navController.navigate(NavDestination.Categories.route)
                 }
             )
         }
@@ -74,6 +81,24 @@ fun SublyNavHost(
                 onNavigateToAdd = {
                     navController.navigate(NavDestination.AddEditSubscription.createRoute())
                 }
+            )
+        }
+
+        // Dashboard-driven filtered subscriptions (separate route so bottom nav is unaffected)
+        composable(
+            route = NavDestination.FilteredSubscriptions.route,
+            arguments = listOf(
+                navArgument("dashboardFilter") { type = NavType.StringType }
+            )
+        ) {
+            SubscriptionsScreen(
+                onNavigateToDetail = { subscriptionId ->
+                    navController.navigate(NavDestination.SubscriptionDetail.createRoute(subscriptionId))
+                },
+                onNavigateToAdd = {
+                    navController.navigate(NavDestination.AddEditSubscription.createRoute())
+                },
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
@@ -90,6 +115,15 @@ fun SublyNavHost(
 
         composable(NavDestination.Settings.route) {
             SettingsScreen()
+        }
+
+        composable(NavDestination.Categories.route) {
+            CategoriesScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToFilter = { filterArg ->
+                    navController.navigate(NavDestination.FilteredSubscriptions.createRoute(filterArg))
+                }
+            )
         }
 
         composable(
@@ -143,3 +177,4 @@ fun SublyNavHost(
         }
     }
 }
+

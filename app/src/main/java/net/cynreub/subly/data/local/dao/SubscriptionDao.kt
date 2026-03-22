@@ -20,8 +20,8 @@ interface SubscriptionDao {
     @Query("SELECT * FROM subscriptions WHERE nextBillingDate BETWEEN :startDate AND :endDate ORDER BY nextBillingDate ASC")
     fun getSubscriptionsBetweenDates(startDate: LocalDate, endDate: LocalDate): Flow<List<SubscriptionEntity>>
 
-    @Query("SELECT * FROM subscriptions WHERE type = :type ORDER BY nextBillingDate ASC")
-    fun getSubscriptionsByType(type: String): Flow<List<SubscriptionEntity>>
+    @Query("SELECT * FROM subscriptions WHERE categoryId = :categoryId ORDER BY nextBillingDate ASC")
+    fun getSubscriptionsByCategoryId(categoryId: String): Flow<List<SubscriptionEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSubscription(subscription: SubscriptionEntity)

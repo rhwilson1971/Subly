@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import net.cynreub.subly.domain.repository.CategoryRepository
 import net.cynreub.subly.domain.repository.PaymentMethodRepository
 import net.cynreub.subly.domain.repository.SubscriptionRepository
 import net.cynreub.subly.domain.usecase.UpdateNextBillingDateUseCase
@@ -20,6 +22,7 @@ import javax.inject.Inject
 class SubscriptionDetailViewModel @Inject constructor(
     private val subscriptionRepository: SubscriptionRepository,
     private val paymentMethodRepository: PaymentMethodRepository,
+    private val categoryRepository: CategoryRepository,
     private val updateNextBillingDateUseCase: UpdateNextBillingDateUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -48,26 +51,36 @@ class SubscriptionDetailViewModel @Inject constructor(
                     }
                     .collectLatest { subscription ->
                         if (subscription != null) {
-                            // Load payment method if available
-                            subscription.paymentMethodId?.let { paymentMethodId ->
-                                paymentMethodRepository.getPaymentMethodById(paymentMethodId)
-                                    .catch { /* Ignore payment method load errors */ }
-                                    .collectLatest { paymentMethod ->
+                            // Load payment method and category in parallel
+                            val paymentMethodFlow = subscription.paymentMethodId?.let {
+                                paymentMethodRepository.getPaymentMethodById(it)
+                            }
+                            val categoryFlow = categoryRepository.getCategoryById(subscription.categoryId)
+
+                            if (paymentMethodFlow != null) {
+                                combine(paymentMethodFlow, categoryFlow) { pm, cat -> pm to cat }
+                                    .catch { /* Ignore secondary load errors */ }
+                                    .collectLatest { (paymentMethod, category) ->
                                         _uiState.value = _uiState.value.copy(
                                             subscription = subscription,
                                             paymentMethod = paymentMethod,
+                                            category = category,
                                             isLoading = false,
                                             error = null
                                         )
                                     }
-                            } ?: run {
-                                // No payment method
-                                _uiState.value = SubscriptionDetailUiState(
-                                    subscription = subscription,
-                                    paymentMethod = null,
-                                    isLoading = false,
-                                    error = null
-                                )
+                            } else {
+                                categoryFlow
+                                    .catch { /* Ignore secondary load errors */ }
+                                    .collectLatest { category ->
+                                        _uiState.value = SubscriptionDetailUiState(
+                                            subscription = subscription,
+                                            category = category,
+                                            paymentMethod = null,
+                                            isLoading = false,
+                                            error = null
+                                        )
+                                    }
                             }
                         } else {
                             _uiState.value = SubscriptionDetailUiState(
@@ -136,6 +149,25 @@ class SubscriptionDetailViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     isMarkingAsPaid = false,
                     error = "Failed to mark as paid: ${e.message}"
+                )
+            }
+        }
+    }
+
+    fun onToggleActive() {
+        val subscription = _uiState.value.subscription ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isTogglingActive = true)
+            try {
+                subscriptionRepository.updateSubscription(
+                    subscription.copy(isActive = !subscription.isActive)
+                )
+                // Flow will deliver the updated subscription automatically
+                _uiState.value = _uiState.value.copy(isTogglingActive = false)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isTogglingActive = false,
+                    error = "Failed to update status: ${e.message}"
                 )
             }
         }

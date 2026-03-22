@@ -6,7 +6,7 @@ import java.util.UUID
 data class Subscription(
     val id: UUID = UUID.randomUUID(),
     val name: String,
-    val type: SubscriptionType,
+    val categoryId: UUID,
     val amount: Double,
     val currency: String,
     val frequency: BillingFrequency,

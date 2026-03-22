@@ -1,5 +1,6 @@
 package net.cynreub.subly.ui.subscriptions.detail
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,13 +13,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -42,10 +46,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.cynreub.subly.domain.model.BillingFrequency
+import net.cynreub.subly.domain.model.Category
 import net.cynreub.subly.domain.model.PaymentMethod
 import net.cynreub.subly.domain.model.PaymentType
 import net.cynreub.subly.domain.model.Subscription
-import net.cynreub.subly.domain.model.SubscriptionType
 import net.cynreub.subly.ui.payment.formatPaymentType
 import java.time.format.DateTimeFormatter
 
@@ -74,7 +78,7 @@ fun SubscriptionDetailScreen(
                 title = { Text("Subscription Details") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
@@ -130,11 +134,14 @@ fun SubscriptionDetailScreen(
             uiState.subscription != null -> {
                 SubscriptionDetailContent(
                     subscription = uiState.subscription!!,
+                    category = uiState.category,
                     paymentMethod = uiState.paymentMethod,
                     isMarkingAsPaid = uiState.isMarkingAsPaid,
+                    isTogglingActive = uiState.isTogglingActive,
                     isDeleting = uiState.isDeleting,
                     error = uiState.error,
                     onMarkAsPaid = viewModel::onMarkAsPaid,
+                    onToggleActive = viewModel::onToggleActive,
                     modifier = Modifier.padding(paddingValues)
                 )
             }
@@ -154,11 +161,14 @@ fun SubscriptionDetailScreen(
 @Composable
 private fun SubscriptionDetailContent(
     subscription: Subscription,
+    category: Category?,
     paymentMethod: PaymentMethod?,
     isMarkingAsPaid: Boolean,
+    isTogglingActive: Boolean,
     isDeleting: Boolean,
     error: String?,
     onMarkAsPaid: () -> Unit,
+    onToggleActive: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -185,7 +195,7 @@ private fun SubscriptionDetailContent(
 
         // Header with name and status badge
         item {
-            HeaderSection(subscription = subscription)
+            HeaderSection(subscription = subscription, category = category)
         }
 
         // Billing Information Card
@@ -211,8 +221,10 @@ private fun SubscriptionDetailContent(
             ActionButtons(
                 isActive = subscription.isActive,
                 isMarkingAsPaid = isMarkingAsPaid,
+                isTogglingActive = isTogglingActive,
                 isDeleting = isDeleting,
-                onMarkAsPaid = onMarkAsPaid
+                onMarkAsPaid = onMarkAsPaid,
+                onToggleActive = onToggleActive
             )
         }
 
@@ -226,6 +238,7 @@ private fun SubscriptionDetailContent(
 @Composable
 private fun HeaderSection(
     subscription: Subscription,
+    category: Category?,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -252,14 +265,28 @@ private fun HeaderSection(
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Type
-            Text(
-                text = formatSubscriptionType(subscription.type),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-            )
+            // Category chip
+            if (category != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                val catColor = runCatching {
+                    Color(android.graphics.Color.parseColor(category.colorHex))
+                }.getOrDefault(MaterialTheme.colorScheme.secondary)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(catColor.copy(alpha = 0.2f))
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) {
+                    Text(text = category.emoji, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = category.displayName,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = catColor
+                    )
+                }
+            }
         }
     }
 }
@@ -471,8 +498,10 @@ private fun AdditionalDetailsCard(
 private fun ActionButtons(
     isActive: Boolean,
     isMarkingAsPaid: Boolean,
+    isTogglingActive: Boolean,
     isDeleting: Boolean,
     onMarkAsPaid: () -> Unit,
+    onToggleActive: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -484,7 +513,7 @@ private fun ActionButtons(
             Button(
                 onClick = onMarkAsPaid,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !isMarkingAsPaid && !isDeleting
+                enabled = !isMarkingAsPaid && !isDeleting && !isTogglingActive
             ) {
                 if (isMarkingAsPaid) {
                     CircularProgressIndicator(
@@ -497,6 +526,36 @@ private fun ActionButtons(
                     Text("Mark as Paid")
                 }
             }
+        }
+
+        // Toggle Active button
+        Button(
+            onClick = onToggleActive,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isMarkingAsPaid && !isDeleting && !isTogglingActive,
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                containerColor = if (isActive)
+                    MaterialTheme.colorScheme.errorContainer
+                else
+                    MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = if (isActive)
+                    MaterialTheme.colorScheme.onErrorContainer
+                else
+                    MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        ) {
+            if (isTogglingActive) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = if (isActive)
+                        MaterialTheme.colorScheme.onErrorContainer
+                    else
+                        MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Text(if (isActive) "Deactivate Subscription" else "Reactivate Subscription")
         }
 
         // Delete action is in TopAppBar, but show loading overlay if deleting
@@ -597,19 +656,6 @@ private fun DeleteConfirmationDialog(
 }
 
 // Helper Functions
-
-private fun formatSubscriptionType(type: SubscriptionType): String {
-    return when (type) {
-        SubscriptionType.STREAMING -> "Streaming"
-        SubscriptionType.MAGAZINE -> "Magazine"
-        SubscriptionType.SERVICE -> "Service"
-        SubscriptionType.MEMBERSHIP -> "Membership"
-        SubscriptionType.CLUB -> "Club"
-        SubscriptionType.UTILITY -> "Utility"
-        SubscriptionType.SOFTWARE -> "Software"
-        SubscriptionType.OTHER -> "Other"
-    }
-}
 
 private fun formatBillingFrequency(frequency: BillingFrequency): String {
     return when (frequency) {

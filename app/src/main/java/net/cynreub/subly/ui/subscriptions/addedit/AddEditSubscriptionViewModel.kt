@@ -8,11 +8,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import net.cynreub.subly.domain.model.BillingFrequency
+import net.cynreub.subly.domain.model.Category
 import net.cynreub.subly.domain.model.PaymentMethod
 import net.cynreub.subly.domain.model.Subscription
-import net.cynreub.subly.domain.model.SubscriptionType
+import net.cynreub.subly.domain.repository.CategoryRepository
 import net.cynreub.subly.domain.repository.PaymentMethodRepository
 import net.cynreub.subly.domain.repository.SubscriptionRepository
 import java.time.LocalDate
@@ -23,6 +25,7 @@ import javax.inject.Inject
 class AddEditSubscriptionViewModel @Inject constructor(
     private val subscriptionRepository: SubscriptionRepository,
     private val paymentMethodRepository: PaymentMethodRepository,
+    private val categoryRepository: CategoryRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -40,20 +43,28 @@ class AddEditSubscriptionViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true)
 
             try {
-                // Load payment methods first
-                paymentMethodRepository.getAllPaymentMethods()
+                combine(
+                    paymentMethodRepository.getAllPaymentMethods(),
+                    categoryRepository.getAllCategories()
+                ) { paymentMethods, categories ->
+                    paymentMethods to categories
+                }
                     .catch { e ->
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            error = "Failed to load payment methods: ${e.message}"
+                            error = "Failed to load options: ${e.message}"
                         )
                     }
-                    .collect { paymentMethods ->
+                    .collect { (paymentMethods, categories) ->
+                        val defaultCategoryId = categories.firstOrNull()?.id
+                            ?: Category.DEFAULT_ID
+
                         _uiState.value = _uiState.value.copy(
-                            availablePaymentMethods = paymentMethods
+                            availablePaymentMethods = paymentMethods,
+                            availableCategories = categories,
+                            selectedCategoryId = _uiState.value.selectedCategoryId ?: defaultCategoryId
                         )
 
-                        // If editing, load subscription data
                         if (subscriptionId != null) {
                             loadSubscription(UUID.fromString(subscriptionId))
                         } else {
@@ -97,8 +108,9 @@ class AddEditSubscriptionViewModel @Inject constructor(
 
         _uiState.value = _uiState.value.copy(
             name = subscription.name,
-            selectedType = subscription.type,
+            selectedCategoryId = subscription.categoryId,
             amount = subscription.amount.toString(),
+            currency = subscription.currency,
             selectedFrequency = subscription.frequency,
             startDate = subscription.startDate,
             selectedPaymentMethod = paymentMethod,
@@ -113,19 +125,12 @@ class AddEditSubscriptionViewModel @Inject constructor(
 
     // Form Field Updates
     fun onNameChange(name: String) {
-        _uiState.value = _uiState.value.copy(
-            name = name,
-            nameError = null // Clear error on change
-        )
+        _uiState.value = _uiState.value.copy(name = name, nameError = null)
     }
 
     fun onAmountChange(amount: String) {
-        // Only allow valid decimal input
         if (amount.isEmpty() || amount.matches(Regex("^\\d*\\.?\\d{0,2}$"))) {
-            _uiState.value = _uiState.value.copy(
-                amount = amount,
-                amountError = null
-            )
+            _uiState.value = _uiState.value.copy(amount = amount, amountError = null)
         }
     }
 
@@ -134,12 +139,8 @@ class AddEditSubscriptionViewModel @Inject constructor(
     }
 
     fun onReminderDaysChange(days: String) {
-        // Only allow valid integer input
         if (days.isEmpty() || days.matches(Regex("^\\d+$"))) {
-            _uiState.value = _uiState.value.copy(
-                reminderDaysBefore = days,
-                reminderDaysError = null
-            )
+            _uiState.value = _uiState.value.copy(reminderDaysBefore = days, reminderDaysError = null)
         }
     }
 
@@ -147,22 +148,36 @@ class AddEditSubscriptionViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isActive = isActive)
     }
 
-    // Dialog State Management
-    fun showTypeDialog() {
-        _uiState.value = _uiState.value.copy(showTypeDialog = true)
+    // Currency dialog
+    fun showCurrencyDialog() {
+        _uiState.value = _uiState.value.copy(showCurrencyDialog = true)
     }
 
-    fun dismissTypeDialog() {
-        _uiState.value = _uiState.value.copy(showTypeDialog = false)
+    fun dismissCurrencyDialog() {
+        _uiState.value = _uiState.value.copy(showCurrencyDialog = false)
     }
 
-    fun onTypeSelected(type: SubscriptionType) {
+    fun onCurrencySelected(currency: String) {
+        _uiState.value = _uiState.value.copy(currency = currency, showCurrencyDialog = false)
+    }
+
+    // Category dialog
+    fun showCategoryDialog() {
+        _uiState.value = _uiState.value.copy(showCategoryDialog = true)
+    }
+
+    fun dismissCategoryDialog() {
+        _uiState.value = _uiState.value.copy(showCategoryDialog = false)
+    }
+
+    fun onCategorySelected(category: Category) {
         _uiState.value = _uiState.value.copy(
-            selectedType = type,
-            showTypeDialog = false
+            selectedCategoryId = category.id,
+            showCategoryDialog = false
         )
     }
 
+    // Frequency dialog
     fun showFrequencyDialog() {
         _uiState.value = _uiState.value.copy(showFrequencyDialog = true)
     }
@@ -178,6 +193,7 @@ class AddEditSubscriptionViewModel @Inject constructor(
         )
     }
 
+    // Payment method dialog
     fun showPaymentMethodDialog() {
         _uiState.value = _uiState.value.copy(showPaymentMethodDialog = true)
     }
@@ -193,6 +209,7 @@ class AddEditSubscriptionViewModel @Inject constructor(
         )
     }
 
+    // Date picker
     fun showDatePicker() {
         _uiState.value = _uiState.value.copy(showDatePicker = true)
     }
@@ -202,23 +219,15 @@ class AddEditSubscriptionViewModel @Inject constructor(
     }
 
     fun onStartDateSelected(date: LocalDate) {
-        _uiState.value = _uiState.value.copy(
-            startDate = date,
-            showDatePicker = false
-        )
+        _uiState.value = _uiState.value.copy(startDate = date, showDatePicker = false)
     }
 
     // Validation and Save
     fun onSaveClick(onSuccess: () -> Unit) {
-        // Clear previous errors
         _uiState.value = _uiState.value.copy(
-            nameError = null,
-            amountError = null,
-            reminderDaysError = null,
-            error = null
+            nameError = null, amountError = null, reminderDaysError = null, error = null
         )
 
-        // Validate form
         val validationErrors = validateForm()
         if (validationErrors.isNotEmpty()) {
             _uiState.value = _uiState.value.copy(
@@ -229,19 +238,15 @@ class AddEditSubscriptionViewModel @Inject constructor(
             return
         }
 
-        // Save subscription
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true)
-
             try {
                 val subscription = createSubscriptionFromForm()
-
                 if (_uiState.value.isEditMode) {
                     subscriptionRepository.updateSubscription(subscription)
                 } else {
                     subscriptionRepository.insertSubscription(subscription)
                 }
-
                 _uiState.value = _uiState.value.copy(isSaving = false)
                 onSuccess()
             } catch (e: Exception) {
@@ -256,29 +261,20 @@ class AddEditSubscriptionViewModel @Inject constructor(
     private fun validateForm(): Map<String, String> {
         val errors = mutableMapOf<String, String>()
 
-        // Name validation
-        if (_uiState.value.name.isBlank()) {
-            errors["name"] = "Name is required"
-        }
+        if (_uiState.value.name.isBlank()) errors["name"] = "Name is required"
 
-        // Amount validation
         val amountValue = _uiState.value.amount.toDoubleOrNull()
-        if (_uiState.value.amount.isBlank()) {
-            errors["amount"] = "Amount is required"
-        } else if (amountValue == null) {
-            errors["amount"] = "Invalid amount"
-        } else if (amountValue <= 0) {
-            errors["amount"] = "Amount must be greater than 0"
+        when {
+            _uiState.value.amount.isBlank() -> errors["amount"] = "Amount is required"
+            amountValue == null             -> errors["amount"] = "Invalid amount"
+            amountValue <= 0               -> errors["amount"] = "Amount must be greater than 0"
         }
 
-        // Reminder days validation
         val reminderDays = _uiState.value.reminderDaysBefore.toIntOrNull()
-        if (_uiState.value.reminderDaysBefore.isBlank()) {
-            errors["reminderDays"] = "Reminder days is required"
-        } else if (reminderDays == null) {
-            errors["reminderDays"] = "Invalid number"
-        } else if (reminderDays < 0 || reminderDays > 30) {
-            errors["reminderDays"] = "Must be between 0 and 30"
+        when {
+            _uiState.value.reminderDaysBefore.isBlank() -> errors["reminderDays"] = "Reminder days is required"
+            reminderDays == null                         -> errors["reminderDays"] = "Invalid number"
+            reminderDays < 0 || reminderDays > 30        -> errors["reminderDays"] = "Must be between 0 and 30"
         }
 
         return errors
@@ -286,14 +282,15 @@ class AddEditSubscriptionViewModel @Inject constructor(
 
     private fun createSubscriptionFromForm(): Subscription {
         val state = _uiState.value
+        val categoryId = state.selectedCategoryId ?: Category.DEFAULT_ID
         val nextBillingDate = calculateNextBillingDate(state.startDate, state.selectedFrequency)
 
         return Subscription(
             id = state.subscriptionId ?: UUID.randomUUID(),
             name = state.name.trim(),
-            type = state.selectedType,
+            categoryId = categoryId,
             amount = state.amount.toDouble(),
-            currency = "USD", // Hardcoded for MVP
+            currency = state.currency,
             frequency = state.selectedFrequency,
             startDate = state.startDate,
             nextBillingDate = nextBillingDate,
@@ -304,14 +301,13 @@ class AddEditSubscriptionViewModel @Inject constructor(
         )
     }
 
-    private fun calculateNextBillingDate(startDate: LocalDate, frequency: BillingFrequency): LocalDate {
-        return when (frequency) {
-            BillingFrequency.WEEKLY -> startDate.plusWeeks(1)
-            BillingFrequency.MONTHLY -> startDate.plusMonths(1)
-            BillingFrequency.QUARTERLY -> startDate.plusMonths(3)
+    private fun calculateNextBillingDate(startDate: LocalDate, frequency: BillingFrequency): LocalDate =
+        when (frequency) {
+            BillingFrequency.WEEKLY      -> startDate.plusWeeks(1)
+            BillingFrequency.MONTHLY     -> startDate.plusMonths(1)
+            BillingFrequency.QUARTERLY   -> startDate.plusMonths(3)
             BillingFrequency.SEMI_ANNUAL -> startDate.plusMonths(6)
-            BillingFrequency.ANNUAL -> startDate.plusYears(1)
-            BillingFrequency.CUSTOM -> startDate.plusMonths(1) // Default to monthly for custom
+            BillingFrequency.ANNUAL      -> startDate.plusYears(1)
+            BillingFrequency.CUSTOM      -> startDate.plusMonths(1)
         }
-    }
 }

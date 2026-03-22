@@ -69,6 +69,18 @@ sealed class NavDestination(
         }
     }
 
+    data object FilteredSubscriptions : NavDestination(
+        route = "filtered_subscriptions/{dashboardFilter}",
+        title = "Subscriptions"
+    ) {
+        fun createRoute(dashboardFilter: String) = "filtered_subscriptions/$dashboardFilter"
+    }
+
+    data object Categories : NavDestination(
+        route = "categories",
+        title = "Categories"
+    )
+
     data object Login : NavDestination(
         route = "login",
         title = "Login"
