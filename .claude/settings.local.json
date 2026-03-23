@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(./gradlew:*)",
-      "Bash(.gradlew build --console=plain)"
+      "Bash(.gradlew build --console=plain)",
+      "mcp__plugin_linear_linear__get_issue"
     ],
     "deny": [],
     "ask": []
