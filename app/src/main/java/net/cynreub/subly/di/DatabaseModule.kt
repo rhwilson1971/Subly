@@ -7,6 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import net.cynreub.subly.data.local.dao.CategoryDao
 import net.cynreub.subly.data.local.dao.PaymentMethodDao
 import net.cynreub.subly.data.local.dao.SubscriptionDao
 import net.cynreub.subly.data.local.database.AppDatabase
@@ -26,19 +27,22 @@ object DatabaseModule {
             AppDatabase::class.java,
             AppDatabase.DATABASE_NAME
         )
-            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build()
     }
 
     @Provides
     @Singleton
-    fun provideSubscriptionDao(database: AppDatabase): SubscriptionDao {
-        return database.subscriptionDao()
-    }
+    fun provideSubscriptionDao(database: AppDatabase): SubscriptionDao =
+        database.subscriptionDao()
 
     @Provides
     @Singleton
-    fun providePaymentMethodDao(database: AppDatabase): PaymentMethodDao {
-        return database.paymentMethodDao()
-    }
+    fun providePaymentMethodDao(database: AppDatabase): PaymentMethodDao =
+        database.paymentMethodDao()
+
+    @Provides
+    @Singleton
+    fun provideCategoryDao(database: AppDatabase): CategoryDao =
+        database.categoryDao()
 }

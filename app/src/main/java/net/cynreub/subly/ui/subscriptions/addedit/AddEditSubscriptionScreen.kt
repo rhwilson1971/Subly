@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -47,8 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.cynreub.subly.domain.model.BillingFrequency
+import net.cynreub.subly.domain.model.Category
 import net.cynreub.subly.domain.model.PaymentMethod
-import net.cynreub.subly.domain.model.SubscriptionType
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -71,7 +71,7 @@ fun AddEditSubscriptionScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -87,7 +87,6 @@ fun AddEditSubscriptionScreen(
                 CircularProgressIndicator()
             }
         } else if (uiState.error != null && !uiState.isEditMode) {
-            // Only show error screen if it's a loading error (not validation)
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -100,9 +99,7 @@ fun AddEditSubscriptionScreen(
                         color = MaterialTheme.colorScheme.error
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onNavigateBack) {
-                        Text("Go Back")
-                    }
+                    Button(onClick = onNavigateBack) { Text("Go Back") }
                 }
             }
         } else {
@@ -115,12 +112,20 @@ fun AddEditSubscriptionScreen(
         }
     }
 
-    // Dialogs
-    if (uiState.showTypeDialog) {
-        TypeSelectorDialog(
-            selectedType = uiState.selectedType,
-            onTypeSelected = viewModel::onTypeSelected,
-            onDismiss = viewModel::dismissTypeDialog
+    if (uiState.showCurrencyDialog) {
+        CurrencySelectorDialog(
+            selectedCurrency = uiState.currency,
+            onCurrencySelected = viewModel::onCurrencySelected,
+            onDismiss = viewModel::dismissCurrencyDialog
+        )
+    }
+
+    if (uiState.showCategoryDialog) {
+        CategorySelectorDialog(
+            categories = uiState.availableCategories,
+            selectedCategoryId = uiState.selectedCategoryId,
+            onCategorySelected = viewModel::onCategorySelected,
+            onDismiss = viewModel::dismissCategoryDialog
         )
     }
 
@@ -192,12 +197,12 @@ private fun AddEditSubscriptionForm(
             )
         }
 
-        // Type Selector
+        // Category Selector
         item {
             OutlinedCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { viewModel.showTypeDialog() }
+                    .clickable { viewModel.showCategoryDialog() }
             ) {
                 Row(
                     modifier = Modifier
@@ -208,13 +213,14 @@ private fun AddEditSubscriptionForm(
                 ) {
                     Column {
                         Text(
-                            text = "Type",
+                            text = "Category",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+                        val cat = uiState.selectedCategory
                         Text(
-                            text = formatSubscriptionType(uiState.selectedType),
+                            text = if (cat != null) "${cat.emoji} ${cat.displayName}" else "Select a category",
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -222,21 +228,50 @@ private fun AddEditSubscriptionForm(
             }
         }
 
-        // Amount Field
+        // Amount + Currency
         item {
-            OutlinedTextField(
-                value = uiState.amount,
-                onValueChange = viewModel::onAmountChange,
-                label = { Text("Amount") },
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Text("$", style = MaterialTheme.typography.bodyLarge) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                isError = uiState.amountError != null,
-                supportingText = uiState.amountError?.let { { Text(it) } } ?: {
-                    Text("Currency: USD")
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                OutlinedTextField(
+                    value = uiState.amount,
+                    onValueChange = viewModel::onAmountChange,
+                    label = { Text("Amount") },
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = { Text(currencySymbol(uiState.currency), style = MaterialTheme.typography.bodyLarge) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    isError = uiState.amountError != null,
+                    supportingText = uiState.amountError?.let { { Text(it) } }
+                )
+                OutlinedCard(
+                    modifier = Modifier
+                        .width(88.dp)
+                        .padding(top = 8.dp)
+                        .clickable { viewModel.showCurrencyDialog() }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Currency",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = uiState.currency,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
-            )
+            }
         }
 
         // Frequency Selector
@@ -250,7 +285,6 @@ private fun AddEditSubscriptionForm(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
@@ -280,7 +314,6 @@ private fun AddEditSubscriptionForm(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
@@ -291,9 +324,7 @@ private fun AddEditSubscriptionForm(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = uiState.startDate.format(
-                                DateTimeFormatter.ofPattern("MMM dd, yyyy")
-                            ),
+                            text = uiState.startDate.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")),
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
@@ -301,7 +332,7 @@ private fun AddEditSubscriptionForm(
             }
         }
 
-        // Auto-calculated Next Billing Date (Read-only display)
+        // Auto-calculated Next Billing Date (read-only)
         item {
             Card(
                 colors = CardDefaults.cardColors(
@@ -324,10 +355,7 @@ private fun AddEditSubscriptionForm(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = calculateNextBillingDatePreview(
-                                uiState.startDate,
-                                uiState.selectedFrequency
-                            ),
+                            text = calculateNextBillingDatePreview(uiState.startDate, uiState.selectedFrequency),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
@@ -353,7 +381,6 @@ private fun AddEditSubscriptionForm(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
@@ -396,17 +423,14 @@ private fun AddEditSubscriptionForm(
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 isError = uiState.reminderDaysError != null,
-                supportingText = uiState.reminderDaysError?.let { { Text(it) } } ?: {
-                    Text("Get notified before the bill is due (0-30 days)")
-                }
+                supportingText = uiState.reminderDaysError?.let { { Text(it) } }
+                    ?: { Text("Get notified before the bill is due (0-30 days)") }
             )
         }
 
         // Active/Inactive Toggle
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Card(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -455,48 +479,49 @@ private fun AddEditSubscriptionForm(
             }
         }
 
-        // Bottom spacing
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-        }
+        item { Spacer(modifier = Modifier.height(16.dp)) }
     }
 }
 
-// Helper Composables for Dialogs
-
 @Composable
-private fun TypeSelectorDialog(
-    selectedType: SubscriptionType,
-    onTypeSelected: (SubscriptionType) -> Unit,
+private fun CategorySelectorDialog(
+    categories: List<Category>,
+    selectedCategoryId: java.util.UUID?,
+    onCategorySelected: (Category) -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Select Subscription Type") },
+        title = { Text("Select Category") },
         text = {
             Column {
-                SubscriptionType.entries.forEach { type ->
+                if (categories.isEmpty()) {
+                    Text(
+                        text = "No categories available.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                categories.forEach { category ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onTypeSelected(type) }
+                            .clickable { onCategorySelected(category) }
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
-                            selected = type == selectedType,
-                            onClick = { onTypeSelected(type) }
+                            selected = category.id == selectedCategoryId,
+                            onClick = { onCategorySelected(category) }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = formatSubscriptionType(type))
+                        Text(text = "${category.emoji} ${category.displayName}")
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close")
-            }
+            TextButton(onClick = onDismiss) { Text("Close") }
         }
     )
 }
@@ -531,9 +556,7 @@ private fun FrequencySelectorDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close")
-            }
+            TextButton(onClick = onDismiss) { Text("Close") }
         }
     )
 }
@@ -550,7 +573,6 @@ private fun PaymentMethodSelectorDialog(
         title = { Text("Select Payment Method") },
         text = {
             Column {
-                // None option
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -565,25 +587,22 @@ private fun PaymentMethodSelectorDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = "None")
                 }
-
-                // Payment methods
-                paymentMethods.forEach { paymentMethod ->
+                paymentMethods.forEach { pm ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onPaymentMethodSelected(paymentMethod) }
+                            .clickable { onPaymentMethodSelected(pm) }
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
-                            selected = paymentMethod.id == selectedPaymentMethod?.id,
-                            onClick = { onPaymentMethodSelected(paymentMethod) }
+                            selected = pm.id == selectedPaymentMethod?.id,
+                            onClick = { onPaymentMethodSelected(pm) }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = paymentMethod.nickname)
+                        Text(text = pm.nickname)
                     }
                 }
-
                 if (paymentMethods.isEmpty()) {
                     Text(
                         text = "No payment methods available. Add one in the Payments tab.",
@@ -595,9 +614,7 @@ private fun PaymentMethodSelectorDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close")
-            }
+            TextButton(onClick = onDismiss) { Text("Close") }
         }
     )
 }
@@ -619,61 +636,107 @@ private fun DatePickerModal(
             TextButton(
                 onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
-                        val date = LocalDate.ofEpochDay(millis / (24 * 60 * 60 * 1000))
-                        onDateSelected(date)
+                        onDateSelected(LocalDate.ofEpochDay(millis / (24 * 60 * 60 * 1000)))
                     }
                 }
-            ) {
-                Text("OK")
-            }
+            ) { Text("OK") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
+            TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     ) {
         DatePicker(state = datePickerState)
     }
 }
 
-// Helper Functions
-
-private fun formatSubscriptionType(type: SubscriptionType): String {
-    return when (type) {
-        SubscriptionType.STREAMING -> "Streaming"
-        SubscriptionType.MAGAZINE -> "Magazine"
-        SubscriptionType.SERVICE -> "Service"
-        SubscriptionType.MEMBERSHIP -> "Membership"
-        SubscriptionType.CLUB -> "Club"
-        SubscriptionType.UTILITY -> "Utility"
-        SubscriptionType.SOFTWARE -> "Software"
-        SubscriptionType.OTHER -> "Other"
-    }
+private fun formatBillingFrequency(frequency: BillingFrequency): String = when (frequency) {
+    BillingFrequency.WEEKLY      -> "Weekly"
+    BillingFrequency.MONTHLY     -> "Monthly"
+    BillingFrequency.QUARTERLY   -> "Quarterly"
+    BillingFrequency.SEMI_ANNUAL -> "Semi-Annual (6 months)"
+    BillingFrequency.ANNUAL      -> "Annual (Yearly)"
+    BillingFrequency.CUSTOM      -> "Custom"
 }
 
-private fun formatBillingFrequency(frequency: BillingFrequency): String {
-    return when (frequency) {
-        BillingFrequency.WEEKLY -> "Weekly"
-        BillingFrequency.MONTHLY -> "Monthly"
-        BillingFrequency.QUARTERLY -> "Quarterly"
-        BillingFrequency.SEMI_ANNUAL -> "Semi-Annual (6 months)"
-        BillingFrequency.ANNUAL -> "Annual (Yearly)"
-        BillingFrequency.CUSTOM -> "Custom"
-    }
+private val COMMON_CURRENCIES = listOf(
+    "USD" to "US Dollar",
+    "EUR" to "Euro",
+    "GBP" to "British Pound",
+    "CAD" to "Canadian Dollar",
+    "AUD" to "Australian Dollar",
+    "JPY" to "Japanese Yen",
+    "CHF" to "Swiss Franc",
+    "CNY" to "Chinese Yuan",
+    "INR" to "Indian Rupee",
+    "MXN" to "Mexican Peso",
+    "BRL" to "Brazilian Real",
+    "KRW" to "South Korean Won"
+)
+
+private fun currencySymbol(code: String): String = when (code) {
+    "USD" -> "$"
+    "EUR" -> "€"
+    "GBP" -> "£"
+    "JPY" -> "¥"
+    "CNY" -> "¥"
+    "INR" -> "₹"
+    "KRW" -> "₩"
+    else  -> code
 }
 
-private fun calculateNextBillingDatePreview(
-    startDate: LocalDate,
-    frequency: BillingFrequency
-): String {
-    val nextDate = when (frequency) {
-        BillingFrequency.WEEKLY -> startDate.plusWeeks(1)
-        BillingFrequency.MONTHLY -> startDate.plusMonths(1)
-        BillingFrequency.QUARTERLY -> startDate.plusMonths(3)
+@Composable
+private fun CurrencySelectorDialog(
+    selectedCurrency: String,
+    onCurrencySelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Currency") },
+        text = {
+            Column {
+                COMMON_CURRENCIES.forEach { (code, name) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onCurrencySelected(code) }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = code == selectedCurrency,
+                            onClick = { onCurrencySelected(code) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "${currencySymbol(code)}  $code",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (code == selectedCurrency) FontWeight.SemiBold else FontWeight.Normal,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = name,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Close") }
+        }
+    )
+}
+
+private fun calculateNextBillingDatePreview(startDate: LocalDate, frequency: BillingFrequency): String {
+    val next = when (frequency) {
+        BillingFrequency.WEEKLY      -> startDate.plusWeeks(1)
+        BillingFrequency.MONTHLY     -> startDate.plusMonths(1)
+        BillingFrequency.QUARTERLY   -> startDate.plusMonths(3)
         BillingFrequency.SEMI_ANNUAL -> startDate.plusMonths(6)
-        BillingFrequency.ANNUAL -> startDate.plusYears(1)
-        BillingFrequency.CUSTOM -> startDate.plusMonths(1)
+        BillingFrequency.ANNUAL      -> startDate.plusYears(1)
+        BillingFrequency.CUSTOM      -> startDate.plusMonths(1)
     }
-    return nextDate.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))
+    return next.format(DateTimeFormatter.ofPattern("MMM dd, yyyy"))
 }

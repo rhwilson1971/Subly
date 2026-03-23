@@ -3,9 +3,12 @@ package net.cynreub.subly.ui.subscriptions
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
@@ -18,13 +21,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.cynreub.subly.domain.model.Category
 import net.cynreub.subly.domain.model.Subscription
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubscriptionsScreen(
     onNavigateToDetail: (String) -> Unit,
     onNavigateToAdd: () -> Unit,
+    onNavigateBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     viewModel: SubscriptionsViewModel = hiltViewModel()
 ) {
@@ -32,8 +39,25 @@ fun SubscriptionsScreen(
     var showFilterDialog by remember { mutableStateOf(false) }
     var showSortDialog by remember { mutableStateOf(false) }
 
+    val hasDashboardFilter = uiState.activeDashboardFilter != null
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        topBar = {
+            if (hasDashboardFilter) {
+                TopAppBar(
+                    title = { Text(uiState.activeDashboardFilter!!.label) },
+                    navigationIcon = {
+                        IconButton(onClick = { onNavigateBack?.invoke() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back to Dashboard"
+                            )
+                        }
+                    }
+                )
+            }
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = onNavigateToAdd) {
                 Icon(Icons.Default.Add, contentDescription = "Add Subscription")
@@ -52,6 +76,38 @@ fun SubscriptionsScreen(
                 onFilterClick = { showFilterDialog = true },
                 onSortClick = { showSortDialog = true }
             )
+
+            // Active dashboard filter chip (back-to-dashboard banner)
+            if (hasDashboardFilter) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = true,
+                        onClick = { onNavigateBack?.invoke() },
+                        label = { Text(uiState.activeDashboardFilter!!.label) },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear filter",
+                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                            )
+                        }
+                    )
+                }
+            }
+
+            // Category filter chips (shown when no dashboard lock so users can still filter)
+            if (!hasDashboardFilter && uiState.availableCategories.isNotEmpty()) {
+                CategoryFilterChips(
+                    categories = uiState.availableCategories,
+                    selectedCategoryId = uiState.selectedCategoryId,
+                    onCategorySelected = viewModel::onCategoryFilterChange
+                )
+            }
 
             // Content
             if (uiState.isLoading) {
@@ -235,23 +291,13 @@ private fun SubscriptionListItem(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.height(2.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                if (!subscription.isActive) {
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = subscription.type.name,
+                        text = "INACTIVE",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.error
                     )
-                    if (!subscription.isActive) {
-                        Text(
-                            text = "INACTIVE",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
                 }
             }
             Column(horizontalAlignment = Alignment.End) {
@@ -268,6 +314,40 @@ private fun SubscriptionListItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun CategoryFilterChips(
+    categories: List<Category>,
+    selectedCategoryId: UUID?,
+    onCategorySelected: (UUID?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LazyRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            FilterChip(
+                selected = selectedCategoryId == null,
+                onClick = { onCategorySelected(null) },
+                label = { Text("All") }
+            )
+        }
+        items(categories, key = { it.id.toString() }) { category ->
+            FilterChip(
+                selected = selectedCategoryId == category.id,
+                onClick = {
+                    onCategorySelected(
+                        if (selectedCategoryId == category.id) null else category.id
+                    )
+                },
+                label = { Text("${category.emoji} ${category.displayName}") }
+            )
         }
     }
 }
@@ -298,10 +378,9 @@ private fun FilterDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = when (filter) {
-                                SubscriptionFilter.ALL -> "All Subscriptions"
-                                SubscriptionFilter.ACTIVE -> "Active Only"
+                                SubscriptionFilter.ALL      -> "All Subscriptions"
+                                SubscriptionFilter.ACTIVE   -> "Active Only"
                                 SubscriptionFilter.INACTIVE -> "Inactive Only"
-                                SubscriptionFilter.BY_TYPE -> "By Type"
                             }
                         )
                     }

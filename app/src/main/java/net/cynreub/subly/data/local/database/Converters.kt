@@ -3,7 +3,6 @@ package net.cynreub.subly.data.local.database
 import androidx.room.TypeConverter
 import net.cynreub.subly.domain.model.BillingFrequency
 import net.cynreub.subly.domain.model.PaymentType
-import net.cynreub.subly.domain.model.SubscriptionType
 import java.time.LocalDate
 
 class Converters {
@@ -16,16 +15,6 @@ class Converters {
     @TypeConverter
     fun toLocalDate(value: String?): LocalDate? {
         return value?.let { LocalDate.parse(it) }
-    }
-
-    @TypeConverter
-    fun fromSubscriptionType(value: SubscriptionType): String {
-        return value.name
-    }
-
-    @TypeConverter
-    fun toSubscriptionType(value: String): SubscriptionType {
-        return SubscriptionType.valueOf(value)
     }
 
     @TypeConverter

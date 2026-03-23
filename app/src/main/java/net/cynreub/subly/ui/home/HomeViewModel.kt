@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import net.cynreub.subly.domain.usecase.GetCategorySpendUseCase
 import net.cynreub.subly.domain.usecase.GetSubscriptionStatsUseCase
 import net.cynreub.subly.domain.usecase.GetUpcomingSubscriptionsUseCase
 import javax.inject.Inject
@@ -16,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getUpcomingSubscriptionsUseCase: GetUpcomingSubscriptionsUseCase,
-    private val getSubscriptionStatsUseCase: GetSubscriptionStatsUseCase
+    private val getSubscriptionStatsUseCase: GetSubscriptionStatsUseCase,
+    private val getCategorySpendUseCase: GetCategorySpendUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -30,11 +32,13 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             combine(
                 getUpcomingSubscriptionsUseCase(days = 30),
-                getSubscriptionStatsUseCase()
-            ) { upcomingSubscriptions, stats ->
+                getSubscriptionStatsUseCase(),
+                getCategorySpendUseCase()
+            ) { upcomingSubscriptions, stats, categorySpend ->
                 HomeUiState(
                     upcomingSubscriptions = upcomingSubscriptions.take(5),
                     stats = stats,
+                    categorySpend = categorySpend,
                     isLoading = false,
                     error = null
                 )

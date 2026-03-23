@@ -4,8 +4,10 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import net.cynreub.subly.data.repository.CategoryRepositoryImpl
 import net.cynreub.subly.data.repository.PaymentMethodRepositoryImpl
 import net.cynreub.subly.data.repository.SubscriptionRepositoryImpl
+import net.cynreub.subly.domain.repository.CategoryRepository
 import net.cynreub.subly.domain.repository.PaymentMethodRepository
 import net.cynreub.subly.domain.repository.SubscriptionRepository
 import javax.inject.Singleton
@@ -25,4 +27,10 @@ abstract class RepositoryModule {
     abstract fun bindPaymentMethodRepository(
         paymentMethodRepositoryImpl: PaymentMethodRepositoryImpl
     ): PaymentMethodRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCategoryRepository(
+        categoryRepositoryImpl: CategoryRepositoryImpl
+    ): CategoryRepository
 }

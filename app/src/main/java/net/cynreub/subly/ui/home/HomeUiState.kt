@@ -1,6 +1,7 @@
 package net.cynreub.subly.ui.home
 
 import net.cynreub.subly.domain.model.Subscription
+import net.cynreub.subly.domain.usecase.CategorySpend
 import net.cynreub.subly.domain.usecase.SubscriptionStats
 
 data class HomeUiState(
@@ -11,6 +12,7 @@ data class HomeUiState(
         activeCount = 0,
         categoryBreakdown = emptyMap()
     ),
+    val categorySpend: List<CategorySpend> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null
 )

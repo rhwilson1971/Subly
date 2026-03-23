@@ -3,17 +3,17 @@ package net.cynreub.subly.data.remote.firestore
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import net.cynreub.subly.domain.model.BillingFrequency
+import net.cynreub.subly.domain.model.Category
 import net.cynreub.subly.domain.model.PaymentMethod
 import net.cynreub.subly.domain.model.PaymentType
 import net.cynreub.subly.domain.model.Subscription
-import net.cynreub.subly.domain.model.SubscriptionType
 import java.time.LocalDate
 import java.util.UUID
 
 fun Subscription.toFirestoreMap(): Map<String, Any?> = mapOf(
     "id" to id.toString(),
     "name" to name,
-    "type" to type.name,
+    "categoryId" to categoryId.toString(),
     "amount" to amount,
     "currency" to currency,
     "frequency" to frequency.name,
@@ -30,7 +30,7 @@ fun DocumentSnapshot.toSubscription(): Subscription? = runCatching {
     Subscription(
         id = UUID.fromString(getString("id")!!),
         name = getString("name")!!,
-        type = SubscriptionType.valueOf(getString("type")!!),
+        categoryId = UUID.fromString(getString("categoryId")!!),
         amount = getDouble("amount")!!,
         currency = getString("currency")!!,
         frequency = BillingFrequency.valueOf(getString("frequency")!!),
@@ -58,5 +58,23 @@ fun DocumentSnapshot.toPaymentMethod(): PaymentMethod? = runCatching {
         type = PaymentType.valueOf(getString("type")!!),
         lastFourDigits = getString("lastFourDigits"),
         icon = null // not synced to Firestore
+    )
+}.getOrNull()
+
+fun Category.toFirestoreMap(): Map<String, Any?> = mapOf(
+    "id" to id.toString(),
+    "name" to name,
+    "displayName" to displayName,
+    "emoji" to emoji,
+    "colorHex" to colorHex
+)
+
+fun DocumentSnapshot.toCategory(): Category? = runCatching {
+    Category(
+        id = UUID.fromString(getString("id")!!),
+        name = getString("name")!!,
+        displayName = getString("displayName")!!,
+        emoji = getString("emoji")!!,
+        colorHex = getString("colorHex")!!
     )
 }.getOrNull()
