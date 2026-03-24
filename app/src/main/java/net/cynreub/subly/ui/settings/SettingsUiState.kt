@@ -1,5 +1,7 @@
 package net.cynreub.subly.ui.settings
 
+import net.cynreub.subly.data.preferences.ThemePreference
+
 data class SettingsUiState(
     val notificationsEnabled: Boolean = true,
     val morningNotificationTime: String = "09:00",
@@ -10,5 +12,6 @@ data class SettingsUiState(
     val showMorningTimePicker: Boolean = false,
     val showEveningTimePicker: Boolean = false,
     val isLoading: Boolean = true,
-    val error: String? = null
+    val error: String? = null,
+    val selectedTheme: ThemePreference = ThemePreference.SYSTEM
 )

@@ -15,15 +15,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.SettingsBrightness
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
+import net.cynreub.subly.data.preferences.ThemePreference
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -88,6 +94,42 @@ fun SettingsScreen(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 24.dp)
         )
+
+        // Appearance / Theme
+        SettingsSection(title = "Appearance") {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Color Theme",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Choose how Subly looks",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ThemeOption.entries.forEach { option ->
+                        FilterChip(
+                            selected = uiState.selectedTheme == option.preference,
+                            onClick = { viewModel.onThemeChange(option.preference) },
+                            label = { Text(option.label) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = option.icon,
+                                    contentDescription = null
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Notifications Enabled Switch
         SettingsSection(title = "General") {
@@ -297,6 +339,16 @@ private fun SettingsItem(
             trailing()
         }
     }
+}
+
+private enum class ThemeOption(
+    val preference: ThemePreference,
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector
+) {
+    SYSTEM(ThemePreference.SYSTEM, "System", Icons.Default.SettingsBrightness),
+    LIGHT(ThemePreference.LIGHT, "Light", Icons.Default.LightMode),
+    DARK(ThemePreference.DARK, "Dark", Icons.Default.DarkMode),
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

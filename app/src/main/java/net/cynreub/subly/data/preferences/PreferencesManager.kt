@@ -28,6 +28,7 @@ class PreferencesManager @Inject constructor(
         val MORNING_TIME = stringPreferencesKey("morning_notification_time")
         val EVENING_TIME = stringPreferencesKey("evening_notification_time")
         val DEFAULT_REMINDER_DAYS = intPreferencesKey("default_reminder_days")
+        val THEME = stringPreferencesKey("theme_preference")
     }
 
     val notificationPreferences: Flow<NotificationPreferences> = context.dataStore.data
@@ -68,6 +69,28 @@ class PreferencesManager @Inject constructor(
     suspend fun updateDefaultReminderDays(days: Int) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.DEFAULT_REMINDER_DAYS] = days
+        }
+    }
+
+    val themePreference: Flow<ThemePreference> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            when (preferences[PreferencesKeys.THEME]) {
+                "LIGHT" -> ThemePreference.LIGHT
+                "DARK" -> ThemePreference.DARK
+                else -> ThemePreference.SYSTEM
+            }
+        }
+
+    suspend fun updateTheme(theme: ThemePreference) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.THEME] = theme.name
         }
     }
 }

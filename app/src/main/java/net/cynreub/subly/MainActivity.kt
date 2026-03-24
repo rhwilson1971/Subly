@@ -13,19 +13,27 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
+import net.cynreub.subly.data.preferences.PreferencesManager
+import net.cynreub.subly.data.preferences.ThemePreference
 import net.cynreub.subly.notification.NotificationHelper
 import net.cynreub.subly.ui.components.SublyBottomBar
 import net.cynreub.subly.ui.components.SublyTopBar
 import net.cynreub.subly.ui.navigation.NavDestination
 import net.cynreub.subly.ui.navigation.SublyNavHost
 import net.cynreub.subly.ui.theme.SublyTheme
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var preferencesManager: PreferencesManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -33,7 +41,10 @@ class MainActivity : ComponentActivity() {
         val subscriptionIdFromNotification = intent?.getStringExtra(NotificationHelper.EXTRA_SUBSCRIPTION_ID)
 
         setContent {
-            SublyTheme {
+            val themePreference by preferencesManager.themePreference
+                .collectAsStateWithLifecycle(initialValue = ThemePreference.SYSTEM)
+
+            SublyTheme(themePreference = themePreference) {
                 var isLoggedIn by remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
                 SublyApp(
                     isLoggedIn = isLoggedIn,

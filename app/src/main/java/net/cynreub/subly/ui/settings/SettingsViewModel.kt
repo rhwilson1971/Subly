@@ -7,8 +7,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import net.cynreub.subly.data.preferences.PreferencesManager
+import net.cynreub.subly.data.preferences.ThemePreference
 import net.cynreub.subly.notification.NotificationScheduler
 import net.cynreub.subly.notification.PermissionHandler
 import javax.inject.Inject
@@ -29,21 +31,25 @@ class SettingsViewModel @Inject constructor(
 
     private fun loadSettings() {
         viewModelScope.launch {
-            preferencesManager.notificationPreferences
+            combine(
+                preferencesManager.notificationPreferences,
+                preferencesManager.themePreference
+            ) { notifications, theme -> notifications to theme }
                 .catch { e ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         error = "Failed to load settings: ${e.message}"
                     )
                 }
-                .collect { preferences ->
+                .collect { (preferences, theme) ->
                     _uiState.value = SettingsUiState(
                         notificationsEnabled = preferences.notificationsEnabled,
                         morningNotificationTime = preferences.morningNotificationTime,
                         eveningNotificationTime = preferences.eveningNotificationTime,
                         defaultReminderDays = preferences.defaultReminderDays,
                         hasNotificationPermission = permissionHandler.isNotificationPermissionGranted(),
-                        isLoading = false
+                        isLoading = false,
+                        selectedTheme = theme
                     )
                 }
         }
@@ -133,6 +139,12 @@ class SettingsViewModel @Inject constructor(
         )
         viewModelScope.launch {
             preferencesManager.updateNotificationsEnabled(false)
+        }
+    }
+
+    fun onThemeChange(theme: ThemePreference) {
+        viewModelScope.launch {
+            preferencesManager.updateTheme(theme)
         }
     }
 

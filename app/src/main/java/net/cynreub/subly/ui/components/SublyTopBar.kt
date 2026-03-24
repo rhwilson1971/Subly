@@ -7,7 +7,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontWeight
-import net.cynreub.subly.ui.theme.ZillaSlabFontFamily
+import net.cynreub.subly.ui.theme.ManropeFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -16,7 +16,7 @@ fun SublyTopBar() {
         title = {
             Text(
                 text = "Subly",
-                fontFamily = ZillaSlabFontFamily,
+                fontFamily = ManropeFontFamily,
                 fontWeight = FontWeight.SemiBold,
                 style = MaterialTheme.typography.headlineMedium
             )
