@@ -43,4 +43,7 @@ interface SubscriptionDao {
 
     @Query("SELECT COUNT(*) FROM subscriptions")
     suspend fun getCount(): Int
+
+    @Query("DELETE FROM subscriptions")
+    suspend fun deleteAll()
 }

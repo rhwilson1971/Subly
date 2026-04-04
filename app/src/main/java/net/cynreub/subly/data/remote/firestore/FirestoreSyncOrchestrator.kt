@@ -17,15 +17,21 @@ class FirestoreSyncOrchestrator @Inject constructor(
     private val paymentMethodDao: PaymentMethodDao,
     private val categoryDao: CategoryDao
 ) {
-    suspend fun initialPullIfEmpty(uid: String) {
-        if (subscriptionDao.getCount() > 0) return // already has local data
+    suspend fun clearAllLocalData() {
+        subscriptionDao.deleteAll()
+        paymentMethodDao.deleteAll()
+        categoryDao.deleteAll()
+    }
 
-        // 1. Fetch categories from Firestore; fall back to defaults if none exist yet
+    /** Clears local cache and pulls fresh data for [uid] from Firestore. */
+    suspend fun syncForUser(uid: String) {
+        clearAllLocalData()
+
+        // 1. Fetch categories from Firestore; fall back to defaults for new users
         val remoteCategories = categorySyncService.fetchAll(uid)
         val categoriesToSeed = if (remoteCategories.isEmpty()) Category.DEFAULTS else remoteCategories
         categoriesToSeed.forEach { categoryDao.insertCategory(it.toEntity()) }
 
-        // Push defaults to Firestore for new users
         if (remoteCategories.isEmpty()) {
             Category.DEFAULTS.forEach { categorySyncService.upsert(it) }
         }

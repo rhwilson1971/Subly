@@ -9,17 +9,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import net.cynreub.subly.data.preferences.PreferencesManager
 import net.cynreub.subly.data.preferences.ThemePreference
+import net.cynreub.subly.domain.repository.AuthRepository
 import net.cynreub.subly.notification.NotificationHelper
 import net.cynreub.subly.ui.components.SublyBottomBar
 import net.cynreub.subly.ui.components.SublyTopBar
@@ -34,6 +31,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var preferencesManager: PreferencesManager
 
+    @Inject
+    lateinit var authRepository: AuthRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -44,11 +44,12 @@ class MainActivity : ComponentActivity() {
             val themePreference by preferencesManager.themePreference
                 .collectAsStateWithLifecycle(initialValue = ThemePreference.SYSTEM)
 
+            val authState by authRepository.authStateFlow
+                .collectAsStateWithLifecycle(initialValue = authRepository.currentUser)
+
             SublyTheme(themePreference = themePreference) {
-                var isLoggedIn by remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
                 SublyApp(
-                    isLoggedIn = isLoggedIn,
-                    onAuthSuccess = { isLoggedIn = true },
+                    isLoggedIn = authState != null,
                     subscriptionIdFromNotification = subscriptionIdFromNotification
                 )
             }
@@ -59,7 +60,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SublyApp(
     isLoggedIn: Boolean,
-    onAuthSuccess: () -> Unit,
     subscriptionIdFromNotification: String? = null
 ) {
     val navController = rememberNavController()
@@ -79,7 +79,6 @@ fun SublyApp(
         SublyNavHost(
             navController = navController,
             isLoggedIn = isLoggedIn,
-            onAuthSuccess = onAuthSuccess,
             modifier = Modifier.padding(innerPadding)
         )
     }
