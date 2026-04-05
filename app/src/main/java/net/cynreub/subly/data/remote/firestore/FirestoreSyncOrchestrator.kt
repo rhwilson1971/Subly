@@ -44,4 +44,20 @@ class FirestoreSyncOrchestrator @Inject constructor(
         subscriptionSyncService.fetchAll(uid)
             .forEach { subscriptionDao.insertSubscription(it.toEntity()) }
     }
+
+    /**
+     * Ensures categories exist locally. Called on cold start when the user is already
+     * logged in (syncForUser is not called in that case). If the table is empty it fetches
+     * from Firestore, falling back to Category.DEFAULTS — identical logic to syncForUser
+     * but without clearing other local data first.
+     */
+    suspend fun ensureCategoriesSeeded(uid: String) {
+        if (categoryDao.getCount() > 0) return
+        val remoteCategories = categorySyncService.fetchAll(uid)
+        val toSeed = if (remoteCategories.isEmpty()) Category.DEFAULTS else remoteCategories
+        toSeed.forEach { categoryDao.insertCategory(it.toEntity()) }
+        if (remoteCategories.isEmpty()) {
+            Category.DEFAULTS.forEach { categorySyncService.upsert(it) }
+        }
+    }
 }

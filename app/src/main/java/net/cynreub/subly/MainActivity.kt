@@ -4,10 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -20,6 +22,7 @@ import net.cynreub.subly.domain.repository.AuthRepository
 import net.cynreub.subly.notification.NotificationHelper
 import net.cynreub.subly.ui.components.SublyBottomBar
 import net.cynreub.subly.ui.components.SublyTopBar
+import net.cynreub.subly.ui.main.MainViewModel
 import net.cynreub.subly.ui.navigation.NavDestination
 import net.cynreub.subly.ui.navigation.SublyNavHost
 import net.cynreub.subly.ui.theme.SublyTheme
@@ -34,6 +37,8 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var authRepository: AuthRepository
 
+    private val mainViewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -46,6 +51,13 @@ class MainActivity : ComponentActivity() {
 
             val authState by authRepository.authStateFlow
                 .collectAsStateWithLifecycle(initialValue = authRepository.currentUser)
+
+            // Ensure default categories are seeded on cold start when already logged in.
+            // On sign-in/registration syncForUser handles this; here we catch the case
+            // where the user is already authenticated but the local DB is empty.
+            LaunchedEffect(authState?.uid) {
+                authState?.uid?.let { uid -> mainViewModel.onUserLoggedIn(uid) }
+            }
 
             SublyTheme(themePreference = themePreference) {
                 SublyApp(
