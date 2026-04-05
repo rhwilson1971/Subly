@@ -2,6 +2,9 @@ package net.cynreub.subly.data.auth
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import net.cynreub.subly.data.remote.firestore.FirestoreSyncOrchestrator
 import net.cynreub.subly.domain.model.User
@@ -25,14 +28,25 @@ class AuthRepositoryImpl @Inject constructor(
     override val isLoggedIn: Boolean
         get() = auth.currentUser != null
 
+    override val authStateFlow: Flow<User?> = callbackFlow {
+        val listener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+            trySend(
+                firebaseAuth.currentUser?.let {
+                    User(uid = it.uid, email = it.email, displayName = it.displayName)
+                }
+            )
+        }
+        auth.addAuthStateListener(listener)
+        awaitClose { auth.removeAuthStateListener(listener) }
+    }
+
     override suspend fun signInWithEmail(email: String, password: String): Result<User> {
         return try {
             val result = auth.signInWithEmailAndPassword(email, password).await()
             val user = result.user!!
             try {
-                syncOrchestrator.initialPullIfEmpty(user.uid)
+                syncOrchestrator.syncForUser(user.uid)
             } catch (e: Exception) {
-                // Log error but allow login to proceed
                 e.printStackTrace()
             }
             Result.success(User(uid = user.uid, email = user.email, displayName = user.displayName))
@@ -46,9 +60,8 @@ class AuthRepositoryImpl @Inject constructor(
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val user = result.user!!
             try {
-                syncOrchestrator.initialPullIfEmpty(user.uid)
+                syncOrchestrator.syncForUser(user.uid)
             } catch (e: Exception) {
-                // Log error but allow login to proceed
                 e.printStackTrace()
             }
             Result.success(User(uid = user.uid, email = user.email, displayName = user.displayName))
@@ -63,9 +76,8 @@ class AuthRepositoryImpl @Inject constructor(
             val result = auth.signInWithCredential(credential).await()
             val user = result.user!!
             try {
-                syncOrchestrator.initialPullIfEmpty(user.uid)
+                syncOrchestrator.syncForUser(user.uid)
             } catch (e: Exception) {
-                // Log error but allow login to proceed
                 e.printStackTrace()
             }
             Result.success(User(uid = user.uid, email = user.email, displayName = user.displayName))
@@ -75,14 +87,11 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun signOut() {
-        auth.signOut()
-    }
-
-    override suspend fun syncOnLogin(uid: String) {
         try {
-            syncOrchestrator.initialPullIfEmpty(uid)
+            syncOrchestrator.clearAllLocalData()
         } catch (e: Exception) {
             e.printStackTrace()
         }
+        auth.signOut()
     }
 }

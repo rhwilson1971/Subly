@@ -292,3 +292,38 @@ Finalize App Name - SubTrack, BillWatch, SubscriptMe?
 UI Mockups - Sketch out key screens
 Start with MVP - Focus on core CRUD and reminders first
 Iterate - Add polish and advanced features
+
+---
+
+## Upgrade to Gradle 9
+
+**Linear Issue:** [HIB-159](https://linear.app/hibiscus/issue/HIB-159/upgrade-to-gradle-91-agp-90)
+**Branch:** `AGP-upgrade-to-9.1`
+**Status:** Complete — build verified with `./gradlew :app:assembleDebug`
+
+### Version Changes
+
+| Dependency | Before | After |
+|---|---|---|
+| Gradle | 8.13 | 9.1.0 |
+| AGP | 8.13.2 | 9.0.0 |
+| Kotlin | 2.0.21 | 2.2.20 |
+| KSP | 2.0.21-1.0.28 | 2.3.6 |
+| Hilt | 2.52 | 2.59.2 |
+| Room | 2.6.1 | 2.7.2 |
+
+### Structural Changes
+
+- Removed `org.jetbrains.kotlin.android` plugin — AGP 9.0+ provides built-in Kotlin support
+- Migrated `kotlinOptions { jvmTarget = "11" }` to `kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }`
+- Updated `compileOptions` Java target from 11 to 17
+- Added `android.disallowKotlinSourceSets=false` to `gradle.properties` (KSP compatibility workaround)
+- Added explicit `material-icons-core` dependency to `libs.versions.toml` and `app/build.gradle.kts`
+
+### Key Compatibility Notes
+
+- AGP 9.0.0 requires Gradle **9.1.0** minimum (not 9.0.0)
+- AGP 9.0 built-in Kotlin requires KGP **2.2.10+** — Kotlin was upgraded accordingly
+- KSP **2.3.x** standalone series is required; KSP 2.2.x throws an incompatibility error with AGP built-in Kotlin
+- Hilt **2.59.2** is the minimum for AGP 9.0 (`BaseExtension` was removed; 2.59 had a ComponentTreeDeps bug fixed in 2.59.1/.2)
+- Room **2.7.2** required to resolve `unexpected jvm signature V` crash in KSP2 processing of DAO query methods

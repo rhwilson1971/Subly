@@ -1,6 +1,7 @@
 package net.cynreub.subly.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -22,9 +23,17 @@ import net.cynreub.subly.ui.settings.SettingsScreen
 fun SublyNavHost(
     navController: NavHostController,
     isLoggedIn: Boolean,
-    onAuthSuccess: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Redirect to login whenever the session ends (sign-out, token revocation, etc.)
+    LaunchedEffect(isLoggedIn) {
+        if (!isLoggedIn) {
+            navController.navigate(NavDestination.Login.route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = if (isLoggedIn) NavDestination.Home.route else NavDestination.Login.route,
@@ -35,7 +44,6 @@ fun SublyNavHost(
             LoginScreen(
                 onNavigateToRegister = { navController.navigate(NavDestination.Register.route) },
                 onAuthSuccess = {
-                    onAuthSuccess()
                     navController.navigate(NavDestination.Home.route) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -47,7 +55,6 @@ fun SublyNavHost(
             RegisterScreen(
                 onNavigateToLogin = { navController.popBackStack() },
                 onAuthSuccess = {
-                    onAuthSuccess()
                     navController.navigate(NavDestination.Home.route) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -177,4 +184,3 @@ fun SublyNavHost(
         }
     }
 }
-

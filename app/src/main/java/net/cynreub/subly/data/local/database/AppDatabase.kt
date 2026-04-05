@@ -40,6 +40,17 @@ abstract class AppDatabase : RoomDatabase() {
         private const val ID_SOFTWARE   = "00000000-0000-4000-a000-000000000007"
         private const val ID_OTHER      = "00000000-0000-4000-a000-000000000008"
 
+        fun seedDefaultCategories(db: SupportSQLiteDatabase) {
+            db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_STREAMING',  'STREAMING',  'Streaming',  '📺', '#E91E63')")
+            db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_MAGAZINE',   'MAGAZINE',   'Magazine',   '📰', '#9C27B0')")
+            db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_SERVICE',    'SERVICE',    'Service',    '⚙️', '#2196F3')")
+            db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_MEMBERSHIP', 'MEMBERSHIP', 'Membership', '🏷️', '#FF9800')")
+            db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_CLUB',       'CLUB',       'Club',       '🎯', '#4CAF50')")
+            db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_UTILITY',    'UTILITY',    'Utility',    '💡', '#607D8B')")
+            db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_SOFTWARE',   'SOFTWARE',   'Software',   '💻', '#00BCD4')")
+            db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_OTHER',      'OTHER',      'Other',      '📦', '#795548')")
+        }
+
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("UPDATE payment_methods SET type = 'VISA' WHERE type = 'CREDIT_CARD'")
@@ -60,14 +71,7 @@ abstract class AppDatabase : RoomDatabase() {
                 )
 
                 // 2. Seed default categories
-                db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_STREAMING',  'STREAMING',  'Streaming',  '📺', '#E91E63')")
-                db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_MAGAZINE',   'MAGAZINE',   'Magazine',   '📰', '#9C27B0')")
-                db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_SERVICE',    'SERVICE',    'Service',    '⚙️', '#2196F3')")
-                db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_MEMBERSHIP', 'MEMBERSHIP', 'Membership', '🏷️', '#FF9800')")
-                db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_CLUB',       'CLUB',       'Club',       '🎯', '#4CAF50')")
-                db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_UTILITY',    'UTILITY',    'Utility',    '💡', '#607D8B')")
-                db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_SOFTWARE',   'SOFTWARE',   'Software',   '💻', '#00BCD4')")
-                db.execSQL("INSERT OR IGNORE INTO categories VALUES ('$ID_OTHER',      'OTHER',      'Other',      '📦', '#795548')")
+                seedDefaultCategories(db)
 
                 // 3. Recreate subscriptions with categoryId instead of type
                 db.execSQL(

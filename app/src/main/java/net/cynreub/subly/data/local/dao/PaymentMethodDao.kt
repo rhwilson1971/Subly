@@ -27,4 +27,7 @@ interface PaymentMethodDao {
 
     @Query("SELECT COUNT(*) FROM subscriptions WHERE paymentMethodId = :paymentMethodId")
     suspend fun getSubscriptionCountForPaymentMethod(paymentMethodId: String): Int
+
+    @Query("DELETE FROM payment_methods")
+    suspend fun deleteAll()
 }

@@ -3,7 +3,10 @@
     "allow": [
       "Bash(./gradlew:*)",
       "Bash(.gradlew build --console=plain)",
-      "mcp__plugin_linear_linear__get_issue"
+      "mcp__plugin_linear_linear__get_issue",
+      "Bash(npx:*)",
+      "WebSearch",
+      "Bash(xargs grep:*)"
     ],
     "deny": [],
     "ask": []

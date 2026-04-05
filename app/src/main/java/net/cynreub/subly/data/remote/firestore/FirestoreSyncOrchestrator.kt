@@ -17,15 +17,21 @@ class FirestoreSyncOrchestrator @Inject constructor(
     private val paymentMethodDao: PaymentMethodDao,
     private val categoryDao: CategoryDao
 ) {
-    suspend fun initialPullIfEmpty(uid: String) {
-        if (subscriptionDao.getCount() > 0) return // already has local data
+    suspend fun clearAllLocalData() {
+        subscriptionDao.deleteAll()
+        paymentMethodDao.deleteAll()
+        categoryDao.deleteAll()
+    }
 
-        // 1. Fetch categories from Firestore; fall back to defaults if none exist yet
+    /** Clears local cache and pulls fresh data for [uid] from Firestore. */
+    suspend fun syncForUser(uid: String) {
+        clearAllLocalData()
+
+        // 1. Fetch categories from Firestore; fall back to defaults for new users
         val remoteCategories = categorySyncService.fetchAll(uid)
         val categoriesToSeed = if (remoteCategories.isEmpty()) Category.DEFAULTS else remoteCategories
         categoriesToSeed.forEach { categoryDao.insertCategory(it.toEntity()) }
 
-        // Push defaults to Firestore for new users
         if (remoteCategories.isEmpty()) {
             Category.DEFAULTS.forEach { categorySyncService.upsert(it) }
         }
@@ -37,5 +43,21 @@ class FirestoreSyncOrchestrator @Inject constructor(
         // 3. Subscriptions
         subscriptionSyncService.fetchAll(uid)
             .forEach { subscriptionDao.insertSubscription(it.toEntity()) }
+    }
+
+    /**
+     * Ensures categories exist locally. Called on cold start when the user is already
+     * logged in (syncForUser is not called in that case). If the table is empty it fetches
+     * from Firestore, falling back to Category.DEFAULTS — identical logic to syncForUser
+     * but without clearing other local data first.
+     */
+    suspend fun ensureCategoriesSeeded(uid: String) {
+        if (categoryDao.getCount() > 0) return
+        val remoteCategories = categorySyncService.fetchAll(uid)
+        val toSeed = if (remoteCategories.isEmpty()) Category.DEFAULTS else remoteCategories
+        toSeed.forEach { categoryDao.insertCategory(it.toEntity()) }
+        if (remoteCategories.isEmpty()) {
+            Category.DEFAULTS.forEach { categorySyncService.upsert(it) }
+        }
     }
 }
