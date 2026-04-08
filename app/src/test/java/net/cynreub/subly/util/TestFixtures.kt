@@ -65,7 +65,7 @@ fun testCategory(
 fun testPaymentMethod(
     id: UUID = UUID.randomUUID(),
     nickname: String = "Visa Rewards",
-    type: PaymentType = PaymentType.CREDIT_CARD,
+    type: PaymentType = PaymentType.VISA,
     lastFourDigits: String? = "4242",
     icon: Int? = null
 ): PaymentMethod = PaymentMethod(
