@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import net.cynreub.subly.data.preferences.PreferencesManager
 import net.cynreub.subly.data.preferences.StorageProviderPreference
 import net.cynreub.subly.data.preferences.ThemePreference
+import net.cynreub.subly.data.remote.dropbox.DropboxAuthManager
 import net.cynreub.subly.data.remote.gdrive.GoogleDriveAuthManager
 import net.cynreub.subly.notification.NotificationScheduler
 import net.cynreub.subly.notification.PermissionHandler
@@ -24,7 +25,8 @@ class SettingsViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
     private val notificationScheduler: NotificationScheduler,
     private val permissionHandler: PermissionHandler,
-    private val googleDriveAuthManager: GoogleDriveAuthManager
+    private val googleDriveAuthManager: GoogleDriveAuthManager,
+    private val dropboxAuthManager: DropboxAuthManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -40,8 +42,9 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.notificationPreferences,
                 preferencesManager.themePreference,
                 preferencesManager.storageProviderPreference,
-                preferencesManager.googleDriveAccountEmail
-            ) { notifications, theme, storageProvider, driveEmail ->
+                preferencesManager.googleDriveAccountEmail,
+                preferencesManager.dropboxCredential
+            ) { notifications, theme, storageProvider, driveEmail, dropboxCred ->
                 SettingsUiState(
                     notificationsEnabled = notifications.notificationsEnabled,
                     morningNotificationTime = notifications.morningNotificationTime,
@@ -51,7 +54,8 @@ class SettingsViewModel @Inject constructor(
                     isLoading = false,
                     selectedTheme = theme,
                     selectedStorageProvider = storageProvider,
-                    googleDriveAccountEmail = driveEmail
+                    googleDriveAccountEmail = driveEmail,
+                    isDropboxConnected = dropboxCred != null
                 )
             }
                 .catch { e ->
@@ -128,7 +132,8 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { preferencesManager.updateStorageProvider(provider) }
     }
 
-    /** Returns the intent needed to launch the Google Drive sign-in flow. */
+    // --- Google Drive ---
+
     fun getGoogleDriveSignInIntent(): Intent =
         googleDriveAuthManager.buildSignInClient().signInIntent
 
@@ -143,6 +148,18 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             googleDriveAuthManager.buildSignInClient().signOut()
             preferencesManager.updateGoogleDriveAccountEmail(null)
+            preferencesManager.updateStorageProvider(StorageProviderPreference.FIREBASE)
+        }
+    }
+
+    // --- Dropbox ---
+
+    /** Returns the browser URL to open to start the Dropbox OAuth flow. */
+    fun getDropboxAuthUrl(): String = dropboxAuthManager.buildAuthUrl()
+
+    fun disconnectDropbox() {
+        viewModelScope.launch {
+            preferencesManager.updateDropboxCredential(null)
             preferencesManager.updateStorageProvider(StorageProviderPreference.FIREBASE)
         }
     }

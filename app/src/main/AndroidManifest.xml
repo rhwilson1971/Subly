@@ -24,8 +24,22 @@
             android:theme="@style/Theme.Subly">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Handles the Dropbox OAuth redirect URI: subly://dropbox-oauth -->
+        <activity
+            android:name=".ui.oauth.DropboxOAuthActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="subly"
+                    android:host="dropbox-oauth" />
             </intent-filter>
         </activity>
     </application>
