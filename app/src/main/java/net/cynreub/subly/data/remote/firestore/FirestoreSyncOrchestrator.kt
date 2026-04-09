@@ -10,9 +10,7 @@ import javax.inject.Singleton
 
 @Singleton
 class FirestoreSyncOrchestrator @Inject constructor(
-    private val subscriptionSyncService: SubscriptionSyncService,
-    private val paymentMethodSyncService: PaymentMethodSyncService,
-    private val categorySyncService: CategorySyncService,
+    private val firestoreSyncProvider: FirestoreSyncProvider,
     private val subscriptionDao: SubscriptionDao,
     private val paymentMethodDao: PaymentMethodDao,
     private val categoryDao: CategoryDao
@@ -21,21 +19,21 @@ class FirestoreSyncOrchestrator @Inject constructor(
         if (subscriptionDao.getCount() > 0) return // already has local data
 
         // 1. Fetch categories from Firestore; fall back to defaults if none exist yet
-        val remoteCategories = categorySyncService.fetchAll(uid)
+        val remoteCategories = firestoreSyncProvider.fetchAllCategories(uid)
         val categoriesToSeed = if (remoteCategories.isEmpty()) Category.DEFAULTS else remoteCategories
         categoriesToSeed.forEach { categoryDao.insertCategory(it.toEntity()) }
 
         // Push defaults to Firestore for new users
         if (remoteCategories.isEmpty()) {
-            Category.DEFAULTS.forEach { categorySyncService.upsert(it) }
+            Category.DEFAULTS.forEach { firestoreSyncProvider.upsertCategory(it) }
         }
 
         // 2. Payment methods (subscriptions reference them)
-        paymentMethodSyncService.fetchAll(uid)
+        firestoreSyncProvider.fetchAllPaymentMethods(uid)
             .forEach { paymentMethodDao.insertPaymentMethod(it.toEntity()) }
 
         // 3. Subscriptions
-        subscriptionSyncService.fetchAll(uid)
+        firestoreSyncProvider.fetchAllSubscriptions(uid)
             .forEach { subscriptionDao.insertSubscription(it.toEntity()) }
     }
 }

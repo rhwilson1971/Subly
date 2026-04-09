@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import net.cynreub.subly.data.preferences.PreferencesManager
+import net.cynreub.subly.data.preferences.StorageProviderPreference
 import net.cynreub.subly.data.preferences.ThemePreference
 import net.cynreub.subly.notification.NotificationScheduler
 import net.cynreub.subly.notification.PermissionHandler
@@ -33,15 +34,16 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             combine(
                 preferencesManager.notificationPreferences,
-                preferencesManager.themePreference
-            ) { notifications, theme -> notifications to theme }
+                preferencesManager.themePreference,
+                preferencesManager.storageProviderPreference
+            ) { notifications, theme, storageProvider -> Triple(notifications, theme, storageProvider) }
                 .catch { e ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         error = "Failed to load settings: ${e.message}"
                     )
                 }
-                .collect { (preferences, theme) ->
+                .collect { (preferences, theme, storageProvider) ->
                     _uiState.value = SettingsUiState(
                         notificationsEnabled = preferences.notificationsEnabled,
                         morningNotificationTime = preferences.morningNotificationTime,
@@ -49,7 +51,8 @@ class SettingsViewModel @Inject constructor(
                         defaultReminderDays = preferences.defaultReminderDays,
                         hasNotificationPermission = permissionHandler.isNotificationPermissionGranted(),
                         isLoading = false,
-                        selectedTheme = theme
+                        selectedTheme = theme,
+                        selectedStorageProvider = storageProvider
                     )
                 }
         }
@@ -145,6 +148,12 @@ class SettingsViewModel @Inject constructor(
     fun onThemeChange(theme: ThemePreference) {
         viewModelScope.launch {
             preferencesManager.updateTheme(theme)
+        }
+    }
+
+    fun onStorageProviderChange(provider: StorageProviderPreference) {
+        viewModelScope.launch {
+            preferencesManager.updateStorageProvider(provider)
         }
     }
 

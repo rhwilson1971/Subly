@@ -19,12 +19,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SettingsBrightness
+import net.cynreub.subly.data.preferences.StorageProviderPreference
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -171,6 +174,37 @@ fun SettingsScreen(
                 enabled = uiState.notificationsEnabled && uiState.hasNotificationPermission,
                 onClick = { viewModel.showEveningTimePicker() }
             )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Storage Provider
+        SettingsSection(title = "Data Storage") {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Storage Provider",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Choose where your subscription data is saved",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    StorageOption.entries.forEach { option ->
+                        FilterChip(
+                            selected = uiState.selectedStorageProvider == option.preference,
+                            onClick = { viewModel.onStorageProviderChange(option.preference) },
+                            label = { Text(option.label) },
+                            leadingIcon = {
+                                Icon(imageVector = option.icon, contentDescription = null)
+                            }
+                        )
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -339,6 +373,15 @@ private fun SettingsItem(
             trailing()
         }
     }
+}
+
+private enum class StorageOption(
+    val preference: StorageProviderPreference,
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector
+) {
+    LOCAL(StorageProviderPreference.LOCAL, "Local", Icons.Default.PhoneAndroid),
+    FIREBASE(StorageProviderPreference.FIREBASE, "Firebase", Icons.Default.Cloud),
 }
 
 private enum class ThemeOption(

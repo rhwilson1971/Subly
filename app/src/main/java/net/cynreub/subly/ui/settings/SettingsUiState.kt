@@ -1,5 +1,6 @@
 package net.cynreub.subly.ui.settings
 
+import net.cynreub.subly.data.preferences.StorageProviderPreference
 import net.cynreub.subly.data.preferences.ThemePreference
 
 data class SettingsUiState(
@@ -13,5 +14,6 @@ data class SettingsUiState(
     val showEveningTimePicker: Boolean = false,
     val isLoading: Boolean = true,
     val error: String? = null,
-    val selectedTheme: ThemePreference = ThemePreference.SYSTEM
+    val selectedTheme: ThemePreference = ThemePreference.SYSTEM,
+    val selectedStorageProvider: StorageProviderPreference = StorageProviderPreference.FIREBASE
 )

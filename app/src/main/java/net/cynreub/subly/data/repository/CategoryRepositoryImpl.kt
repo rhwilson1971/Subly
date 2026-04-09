@@ -6,16 +6,16 @@ import net.cynreub.subly.data.local.dao.CategoryDao
 import net.cynreub.subly.data.mapper.toCategoryWithCount
 import net.cynreub.subly.data.mapper.toDomain
 import net.cynreub.subly.data.mapper.toEntity
-import net.cynreub.subly.data.remote.firestore.CategorySyncService
 import net.cynreub.subly.domain.model.Category
 import net.cynreub.subly.domain.repository.CategoryRepository
+import net.cynreub.subly.domain.sync.SyncProvider
 import net.cynreub.subly.ui.categories.CategoryWithCount
 import java.util.UUID
 import javax.inject.Inject
 
 class CategoryRepositoryImpl @Inject constructor(
     private val categoryDao: CategoryDao,
-    private val syncService: CategorySyncService
+    private val syncProvider: SyncProvider
 ) : CategoryRepository {
 
     override fun getAllCategories(): Flow<List<Category>> =
@@ -32,12 +32,12 @@ class CategoryRepositoryImpl @Inject constructor(
 
     override suspend fun insertCategory(category: Category) {
         categoryDao.insertCategory(category.toEntity())
-        syncService.upsert(category)
+        syncProvider.upsertCategory(category)
     }
 
     override suspend fun updateCategory(category: Category) {
         categoryDao.updateCategory(category.toEntity())
-        syncService.upsert(category)
+        syncProvider.upsertCategory(category)
     }
 
     override suspend fun deleteCategory(category: Category) {
@@ -48,6 +48,6 @@ class CategoryRepositoryImpl @Inject constructor(
             )
         }
         categoryDao.deleteCategory(category.toEntity())
-        syncService.delete(category.id)
+        syncProvider.deleteCategory(category.id)
     }
 }
