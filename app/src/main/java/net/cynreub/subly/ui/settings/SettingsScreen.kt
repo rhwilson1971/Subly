@@ -2,6 +2,7 @@ package net.cynreub.subly.ui.settings
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SettingsBrightness
 import net.cynreub.subly.data.preferences.StorageProviderPreference
+import net.cynreub.subly.ui.oauth.OneDriveOAuthActivity
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -85,6 +87,11 @@ fun SettingsScreen(
             }
         }
     }
+
+    // OneDrive sign-in launcher — token and account email are stored by OneDriveOAuthActivity
+    val oneDriveLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { /* result handled inside OneDriveOAuthActivity */ }
 
     // Refresh permission status when returning to screen
     LaunchedEffect(Unit) {
@@ -288,6 +295,43 @@ fun SettingsScreen(
                         }
                     }
                 }
+
+                // OneDrive connect / disconnect card
+                if (uiState.selectedStorageProvider == StorageProviderPreference.ONEDRIVE) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (uiState.oneDriveAccountEmail != null) {
+                        Text(
+                            text = "Connected as ${uiState.oneDriveAccountEmail}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(onClick = { viewModel.disconnectOneDrive() }) {
+                            Text("Disconnect OneDrive")
+                        }
+                    } else {
+                        Text(
+                            text = "Connect your Microsoft account to sync data via OneDrive",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = {
+                            oneDriveLauncher.launch(
+                                Intent(context, OneDriveOAuthActivity::class.java)
+                            )
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Cloud,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text("Connect OneDrive")
+                        }
+                    }
+                }
             }
         }
 
@@ -468,6 +512,7 @@ private enum class StorageOption(
     FIREBASE(StorageProviderPreference.FIREBASE, "Firebase", Icons.Default.Cloud),
     GOOGLE_DRIVE(StorageProviderPreference.GOOGLE_DRIVE, "Google Drive", Icons.Default.Cloud),
     DROPBOX(StorageProviderPreference.DROPBOX, "Dropbox", Icons.Default.Cloud),
+    ONEDRIVE(StorageProviderPreference.ONEDRIVE, "OneDrive", Icons.Default.Cloud),
 }
 
 private enum class ThemeOption(

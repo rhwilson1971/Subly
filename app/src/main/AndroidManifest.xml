@@ -42,6 +42,31 @@
                     android:host="dropbox-oauth" />
             </intent-filter>
         </activity>
+
+        <!-- Launches MSAL interactive sign-in for OneDrive (no UI — auth happens in browser) -->
+        <activity
+            android:name=".ui.oauth.OneDriveOAuthActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.NoDisplay" />
+
+        <!--
+            Handles the MSAL redirect URI: msauth://net.cynreub.subly/<signature_hash>
+            Replace placeholder_hash with the Base64 URL-encoded SHA-1 signature hash of the
+            release keystore registered in the Azure portal app registration.
+        -->
+        <activity
+            android:name="com.microsoft.identity.client.BrowserTabActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="msauth"
+                    android:host="net.cynreub.subly"
+                    android:path="/placeholder_hash" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

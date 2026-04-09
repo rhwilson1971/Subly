@@ -16,6 +16,7 @@ import net.cynreub.subly.data.preferences.StorageProviderPreference
 import net.cynreub.subly.data.preferences.ThemePreference
 import net.cynreub.subly.data.remote.dropbox.DropboxAuthManager
 import net.cynreub.subly.data.remote.gdrive.GoogleDriveAuthManager
+import net.cynreub.subly.data.remote.onedrive.MsalAuthManager
 import net.cynreub.subly.notification.NotificationScheduler
 import net.cynreub.subly.notification.PermissionHandler
 import javax.inject.Inject
@@ -26,7 +27,8 @@ class SettingsViewModel @Inject constructor(
     private val notificationScheduler: NotificationScheduler,
     private val permissionHandler: PermissionHandler,
     private val googleDriveAuthManager: GoogleDriveAuthManager,
-    private val dropboxAuthManager: DropboxAuthManager
+    private val dropboxAuthManager: DropboxAuthManager,
+    private val msalAuthManager: MsalAuthManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -38,13 +40,22 @@ class SettingsViewModel @Inject constructor(
 
     private fun loadSettings() {
         viewModelScope.launch {
-            combine(
+            // Kotlin combine() supports up to 5 typed flows; use nested combines for 6.
+            val coreFlow = combine(
                 preferencesManager.notificationPreferences,
                 preferencesManager.themePreference,
-                preferencesManager.storageProviderPreference,
+                preferencesManager.storageProviderPreference
+            ) { notifications, theme, storageProvider ->
+                Triple(notifications, theme, storageProvider)
+            }
+            val cloudFlow = combine(
                 preferencesManager.googleDriveAccountEmail,
-                preferencesManager.dropboxCredential
-            ) { notifications, theme, storageProvider, driveEmail, dropboxCred ->
+                preferencesManager.dropboxCredential,
+                preferencesManager.oneDriveAccountEmail
+            ) { driveEmail, dropboxCred, oneDriveEmail ->
+                Triple(driveEmail, dropboxCred, oneDriveEmail)
+            }
+            combine(coreFlow, cloudFlow) { (notifications, theme, storageProvider), (driveEmail, dropboxCred, oneDriveEmail) ->
                 SettingsUiState(
                     notificationsEnabled = notifications.notificationsEnabled,
                     morningNotificationTime = notifications.morningNotificationTime,
@@ -55,7 +66,8 @@ class SettingsViewModel @Inject constructor(
                     selectedTheme = theme,
                     selectedStorageProvider = storageProvider,
                     googleDriveAccountEmail = driveEmail,
-                    isDropboxConnected = dropboxCred != null
+                    isDropboxConnected = dropboxCred != null,
+                    oneDriveAccountEmail = oneDriveEmail
                 )
             }
                 .catch { e ->
@@ -160,6 +172,16 @@ class SettingsViewModel @Inject constructor(
     fun disconnectDropbox() {
         viewModelScope.launch {
             preferencesManager.updateDropboxCredential(null)
+            preferencesManager.updateStorageProvider(StorageProviderPreference.FIREBASE)
+        }
+    }
+
+    // --- OneDrive ---
+
+    fun disconnectOneDrive() {
+        viewModelScope.launch {
+            msalAuthManager.signOut()
+            preferencesManager.updateOneDriveAccountEmail(null)
             preferencesManager.updateStorageProvider(StorageProviderPreference.FIREBASE)
         }
     }
