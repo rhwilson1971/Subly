@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.first
 import net.cynreub.subly.data.preferences.PreferencesManager
 import net.cynreub.subly.data.preferences.StorageProviderPreference
 import net.cynreub.subly.data.remote.firestore.FirestoreSyncProvider
+import net.cynreub.subly.data.remote.gdrive.GoogleDriveSyncProvider
 import net.cynreub.subly.domain.model.Category
 import net.cynreub.subly.domain.model.PaymentMethod
 import net.cynreub.subly.domain.model.Subscription
@@ -15,6 +16,7 @@ import javax.inject.Singleton
 @Singleton
 class DelegatingSyncProvider @Inject constructor(
     private val firestoreProvider: FirestoreSyncProvider,
+    private val googleDriveProvider: GoogleDriveSyncProvider,
     private val noOpProvider: NoOpSyncProvider,
     private val preferencesManager: PreferencesManager
 ) : SyncProvider {
@@ -22,6 +24,7 @@ class DelegatingSyncProvider @Inject constructor(
     private suspend fun active(): SyncProvider =
         when (preferencesManager.storageProviderPreference.first()) {
             StorageProviderPreference.FIREBASE -> firestoreProvider
+            StorageProviderPreference.GOOGLE_DRIVE -> googleDriveProvider
             StorageProviderPreference.LOCAL -> noOpProvider
         }
 

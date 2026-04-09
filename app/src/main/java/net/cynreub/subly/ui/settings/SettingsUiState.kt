@@ -15,5 +15,6 @@ data class SettingsUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
     val selectedTheme: ThemePreference = ThemePreference.SYSTEM,
-    val selectedStorageProvider: StorageProviderPreference = StorageProviderPreference.FIREBASE
+    val selectedStorageProvider: StorageProviderPreference = StorageProviderPreference.FIREBASE,
+    val googleDriveAccountEmail: String? = null
 )

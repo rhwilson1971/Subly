@@ -31,6 +31,7 @@ class PreferencesManager @Inject constructor(
         val DEFAULT_REMINDER_DAYS = intPreferencesKey("default_reminder_days")
         val THEME = stringPreferencesKey("theme_preference")
         val STORAGE_PROVIDER = stringPreferencesKey("storage_provider")
+        val GOOGLE_DRIVE_ACCOUNT_EMAIL = stringPreferencesKey("google_drive_account_email")
     }
 
     val notificationPreferences: Flow<NotificationPreferences> = context.dataStore.data
@@ -107,6 +108,7 @@ class PreferencesManager @Inject constructor(
         .map { preferences ->
             when (preferences[PreferencesKeys.STORAGE_PROVIDER]) {
                 "LOCAL" -> StorageProviderPreference.LOCAL
+                "GOOGLE_DRIVE" -> StorageProviderPreference.GOOGLE_DRIVE
                 else -> StorageProviderPreference.FIREBASE
             }
         }
@@ -114,6 +116,22 @@ class PreferencesManager @Inject constructor(
     suspend fun updateStorageProvider(provider: StorageProviderPreference) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.STORAGE_PROVIDER] = provider.name
+        }
+    }
+
+    val googleDriveAccountEmail: Flow<String?> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { preferences -> preferences[PreferencesKeys.GOOGLE_DRIVE_ACCOUNT_EMAIL] }
+
+    suspend fun updateGoogleDriveAccountEmail(email: String?) {
+        context.dataStore.edit { preferences ->
+            if (email != null) {
+                preferences[PreferencesKeys.GOOGLE_DRIVE_ACCOUNT_EMAIL] = email
+            } else {
+                preferences.remove(PreferencesKeys.GOOGLE_DRIVE_ACCOUNT_EMAIL)
+            }
         }
     }
 }
