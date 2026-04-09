@@ -1,4 +1,4 @@
-package net.cynreub.subly.data.remote.gdrive
+package net.cynreub.subly.data.remote.sync
 
 import net.cynreub.subly.domain.model.BillingFrequency
 import net.cynreub.subly.domain.model.Category

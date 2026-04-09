@@ -3,6 +3,7 @@ package net.cynreub.subly.data.sync
 import kotlinx.coroutines.flow.first
 import net.cynreub.subly.data.preferences.PreferencesManager
 import net.cynreub.subly.data.preferences.StorageProviderPreference
+import net.cynreub.subly.data.remote.dropbox.DropboxSyncProvider
 import net.cynreub.subly.data.remote.firestore.FirestoreSyncProvider
 import net.cynreub.subly.data.remote.gdrive.GoogleDriveSyncProvider
 import net.cynreub.subly.domain.model.Category
@@ -17,6 +18,7 @@ import javax.inject.Singleton
 class DelegatingSyncProvider @Inject constructor(
     private val firestoreProvider: FirestoreSyncProvider,
     private val googleDriveProvider: GoogleDriveSyncProvider,
+    private val dropboxProvider: DropboxSyncProvider,
     private val noOpProvider: NoOpSyncProvider,
     private val preferencesManager: PreferencesManager
 ) : SyncProvider {
@@ -25,6 +27,7 @@ class DelegatingSyncProvider @Inject constructor(
         when (preferencesManager.storageProviderPreference.first()) {
             StorageProviderPreference.FIREBASE -> firestoreProvider
             StorageProviderPreference.GOOGLE_DRIVE -> googleDriveProvider
+            StorageProviderPreference.DROPBOX -> dropboxProvider
             StorageProviderPreference.LOCAL -> noOpProvider
         }
 

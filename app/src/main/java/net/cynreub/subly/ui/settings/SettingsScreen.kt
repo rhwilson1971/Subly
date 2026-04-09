@@ -2,6 +2,8 @@ package net.cynreub.subly.ui.settings
 
 import android.Manifest
 import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -50,6 +52,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -62,6 +65,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     // Permission launcher
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -214,6 +218,39 @@ fun SettingsScreen(
                                 Icon(imageVector = option.icon, contentDescription = null)
                             }
                         )
+                    }
+                }
+
+                // Dropbox connect / disconnect card
+                if (uiState.selectedStorageProvider == StorageProviderPreference.DROPBOX) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (uiState.isDropboxConnected) {
+                        Text(
+                            text = "Dropbox connected",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(onClick = { viewModel.disconnectDropbox() }) {
+                            Text("Disconnect Dropbox")
+                        }
+                    } else {
+                        Text(
+                            text = "Connect your Dropbox account to sync data",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = {
+                            val authUrl = viewModel.getDropboxAuthUrl()
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse(authUrl))
+                            )
+                        }) {
+                            Text("Connect Dropbox")
+                        }
                     }
                 }
 
@@ -430,6 +467,7 @@ private enum class StorageOption(
     LOCAL(StorageProviderPreference.LOCAL, "Local", Icons.Default.PhoneAndroid),
     FIREBASE(StorageProviderPreference.FIREBASE, "Firebase", Icons.Default.Cloud),
     GOOGLE_DRIVE(StorageProviderPreference.GOOGLE_DRIVE, "Google Drive", Icons.Default.Cloud),
+    DROPBOX(StorageProviderPreference.DROPBOX, "Dropbox", Icons.Default.Cloud),
 }
 
 private enum class ThemeOption(
