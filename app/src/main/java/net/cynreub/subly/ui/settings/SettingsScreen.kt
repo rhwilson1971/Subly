@@ -1,9 +1,11 @@
 package net.cynreub.subly.ui.settings
 
 import android.Manifest
+import android.app.Activity
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.auth.api.signin.GoogleSignIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,12 +31,14 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SettingsBrightness
 import net.cynreub.subly.data.preferences.StorageProviderPreference
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -63,10 +67,18 @@ fun SettingsScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) {
-            viewModel.onPermissionGranted()
-        } else {
-            viewModel.onPermissionDenied()
+        if (isGranted) viewModel.onPermissionGranted() else viewModel.onPermissionDenied()
+    }
+
+    // Google Drive sign-in launcher
+    val driveSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            runCatching {
+                val account = GoogleSignIn.getSignedInAccountFromIntent(result.data).result
+                viewModel.onGoogleDriveConnected(account)
+            }
         }
     }
 
@@ -202,6 +214,41 @@ fun SettingsScreen(
                                 Icon(imageVector = option.icon, contentDescription = null)
                             }
                         )
+                    }
+                }
+
+                // Google Drive connect / disconnect card
+                if (uiState.selectedStorageProvider == StorageProviderPreference.GOOGLE_DRIVE) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (uiState.googleDriveAccountEmail != null) {
+                        Text(
+                            text = "Connected as ${uiState.googleDriveAccountEmail}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(onClick = { viewModel.disconnectGoogleDrive() }) {
+                            Text("Disconnect Google Drive")
+                        }
+                    } else {
+                        Text(
+                            text = "Connect your Google account to sync data via Google Drive",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = {
+                            driveSignInLauncher.launch(viewModel.getGoogleDriveSignInIntent())
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Cloud,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text("Connect Google Drive")
+                        }
                     }
                 }
             }
@@ -382,6 +429,7 @@ private enum class StorageOption(
 ) {
     LOCAL(StorageProviderPreference.LOCAL, "Local", Icons.Default.PhoneAndroid),
     FIREBASE(StorageProviderPreference.FIREBASE, "Firebase", Icons.Default.Cloud),
+    GOOGLE_DRIVE(StorageProviderPreference.GOOGLE_DRIVE, "Google Drive", Icons.Default.Cloud),
 }
 
 private enum class ThemeOption(
