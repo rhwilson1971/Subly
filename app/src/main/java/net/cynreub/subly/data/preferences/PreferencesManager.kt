@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import net.cynreub.subly.data.preferences.StorageProviderPreference
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -29,6 +30,7 @@ class PreferencesManager @Inject constructor(
         val EVENING_TIME = stringPreferencesKey("evening_notification_time")
         val DEFAULT_REMINDER_DAYS = intPreferencesKey("default_reminder_days")
         val THEME = stringPreferencesKey("theme_preference")
+        val STORAGE_PROVIDER = stringPreferencesKey("storage_provider")
     }
 
     val notificationPreferences: Flow<NotificationPreferences> = context.dataStore.data
@@ -91,6 +93,27 @@ class PreferencesManager @Inject constructor(
     suspend fun updateTheme(theme: ThemePreference) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.THEME] = theme.name
+        }
+    }
+
+    val storageProviderPreference: Flow<StorageProviderPreference> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            when (preferences[PreferencesKeys.STORAGE_PROVIDER]) {
+                "LOCAL" -> StorageProviderPreference.LOCAL
+                else -> StorageProviderPreference.FIREBASE
+            }
+        }
+
+    suspend fun updateStorageProvider(provider: StorageProviderPreference) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.STORAGE_PROVIDER] = provider.name
         }
     }
 }
