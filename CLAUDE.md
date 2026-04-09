@@ -1,4 +1,7 @@
 Project Overview: Subly
+
+[Navigation Flow Diagram](navigation-flow.md)
+
 Core Architecture
 Tech Stack Recommendation:
 
