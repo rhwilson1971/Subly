@@ -116,6 +116,7 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.hilt.android.testing)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
     kspAndroidTest(libs.hilt.compiler)
 
     // Debug
