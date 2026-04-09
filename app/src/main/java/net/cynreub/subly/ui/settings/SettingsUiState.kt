@@ -17,5 +17,6 @@ data class SettingsUiState(
     val selectedTheme: ThemePreference = ThemePreference.SYSTEM,
     val selectedStorageProvider: StorageProviderPreference = StorageProviderPreference.FIREBASE,
     val googleDriveAccountEmail: String? = null,
-    val isDropboxConnected: Boolean = false
+    val isDropboxConnected: Boolean = false,
+    val oneDriveAccountEmail: String? = null
 )

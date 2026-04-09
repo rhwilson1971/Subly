@@ -4,5 +4,6 @@ enum class StorageProviderPreference {
     LOCAL,
     FIREBASE,
     GOOGLE_DRIVE,
-    DROPBOX
+    DROPBOX,
+    ONEDRIVE
 }

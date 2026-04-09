@@ -33,6 +33,7 @@ class PreferencesManager @Inject constructor(
         val STORAGE_PROVIDER = stringPreferencesKey("storage_provider")
         val GOOGLE_DRIVE_ACCOUNT_EMAIL = stringPreferencesKey("google_drive_account_email")
         val DROPBOX_CREDENTIAL = stringPreferencesKey("dropbox_credential")
+        val ONEDRIVE_ACCOUNT_EMAIL = stringPreferencesKey("onedrive_account_email")
     }
 
     val notificationPreferences: Flow<NotificationPreferences> = context.dataStore.data
@@ -111,6 +112,7 @@ class PreferencesManager @Inject constructor(
                 "LOCAL" -> StorageProviderPreference.LOCAL
                 "GOOGLE_DRIVE" -> StorageProviderPreference.GOOGLE_DRIVE
                 "DROPBOX" -> StorageProviderPreference.DROPBOX
+                "ONEDRIVE" -> StorageProviderPreference.ONEDRIVE
                 else -> StorageProviderPreference.FIREBASE
             }
         }
@@ -149,6 +151,22 @@ class PreferencesManager @Inject constructor(
                 preferences[PreferencesKeys.DROPBOX_CREDENTIAL] = credential
             } else {
                 preferences.remove(PreferencesKeys.DROPBOX_CREDENTIAL)
+            }
+        }
+    }
+
+    val oneDriveAccountEmail: Flow<String?> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { preferences -> preferences[PreferencesKeys.ONEDRIVE_ACCOUNT_EMAIL] }
+
+    suspend fun updateOneDriveAccountEmail(email: String?) {
+        context.dataStore.edit { preferences ->
+            if (email != null) {
+                preferences[PreferencesKeys.ONEDRIVE_ACCOUNT_EMAIL] = email
+            } else {
+                preferences.remove(PreferencesKeys.ONEDRIVE_ACCOUNT_EMAIL)
             }
         }
     }

@@ -99,6 +99,9 @@ dependencies {
     // Dropbox
     implementation(libs.dropbox.core.sdk)
 
+    // MSAL (OneDrive)
+    implementation(libs.msal)
+
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
