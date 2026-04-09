@@ -4,7 +4,10 @@
       "Bash(./gradlew:*)",
       "Bash(.gradlew build --console=plain)",
       "mcp__plugin_linear_linear__get_issue",
-      "mcp__claude_ai_Linear__get_issue"
+      "mcp__claude_ai_Linear__get_issue",
+      "mcp__305929a2-2baf-4693-87c5-dc4bdf20b005__save_issue",
+      "Bash(gh pr:*)",
+      "mcp__notion__notion-create-pages"
     ],
     "deny": [],
     "ask": []
