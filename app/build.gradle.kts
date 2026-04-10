@@ -123,6 +123,8 @@ dependencies {
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.hilt.android.testing)
     androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.androidx.work.testing)
+    androidTestImplementation(libs.mockk.android)
     kspAndroidTest(libs.hilt.compiler)
 
     // Debug
