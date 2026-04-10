@@ -2,5 +2,8 @@ package net.cynreub.subly.data.preferences
 
 enum class StorageProviderPreference {
     LOCAL,
-    FIREBASE
+    FIREBASE,
+    GOOGLE_DRIVE,
+    DROPBOX,
+    ONEDRIVE
 }

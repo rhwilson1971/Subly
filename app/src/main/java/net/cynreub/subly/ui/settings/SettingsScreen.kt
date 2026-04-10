@@ -1,9 +1,14 @@
 package net.cynreub.subly.ui.settings
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.auth.api.signin.GoogleSignIn
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,14 +32,18 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SettingsBrightness
+import androidx.compose.material.icons.filled.Storage
 import net.cynreub.subly.data.preferences.StorageProviderPreference
+import net.cynreub.subly.ui.oauth.OneDriveOAuthActivity
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -46,6 +55,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -55,20 +65,35 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
+    onNavigateToStorageProvider: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     // Permission launcher
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) {
-            viewModel.onPermissionGranted()
-        } else {
-            viewModel.onPermissionDenied()
+        if (isGranted) viewModel.onPermissionGranted() else viewModel.onPermissionDenied()
+    }
+
+    // Google Drive sign-in launcher
+    val driveSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            runCatching {
+                val account = GoogleSignIn.getSignedInAccountFromIntent(result.data).result
+                viewModel.onGoogleDriveConnected(account)
+            }
         }
     }
+
+    // OneDrive sign-in launcher — token and account email are stored by OneDriveOAuthActivity
+    val oneDriveLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { /* result handled inside OneDriveOAuthActivity */ }
 
     // Refresh permission status when returning to screen
     LaunchedEffect(Unit) {
@@ -204,8 +229,142 @@ fun SettingsScreen(
                         )
                     }
                 }
+
+                // Link to full storage management screen
+                Spacer(modifier = Modifier.height(4.dp))
+                HorizontalDivider()
             }
         }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        SettingsSection(title = "") {
+            SettingsItem(
+                icon = Icons.Default.Storage,
+                title = "Manage Storage & Sync",
+                subtitle = "View status, sync now, and migrate data",
+                onClick = onNavigateToStorageProvider
+            )
+        }
+
+        // Inline connect/disconnect cards — only shown when an OAuth provider is selected
+        val showConnectionSection = uiState.selectedStorageProvider in listOf(
+            StorageProviderPreference.DROPBOX,
+            StorageProviderPreference.GOOGLE_DRIVE,
+            StorageProviderPreference.ONEDRIVE
+        )
+        if (showConnectionSection) {
+        Spacer(modifier = Modifier.height(16.dp))
+
+        SettingsSection(title = "Provider Connection") {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // Dropbox connect / disconnect card
+                if (uiState.selectedStorageProvider == StorageProviderPreference.DROPBOX) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (uiState.isDropboxConnected) {
+                        Text(
+                            text = "Dropbox connected",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(onClick = { viewModel.disconnectDropbox() }) {
+                            Text("Disconnect Dropbox")
+                        }
+                    } else {
+                        Text(
+                            text = "Connect your Dropbox account to sync data",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = {
+                            val authUrl = viewModel.getDropboxAuthUrl()
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse(authUrl))
+                            )
+                        }) {
+                            Text("Connect Dropbox")
+                        }
+                    }
+                }
+
+                // Google Drive connect / disconnect card
+                if (uiState.selectedStorageProvider == StorageProviderPreference.GOOGLE_DRIVE) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (uiState.googleDriveAccountEmail != null) {
+                        Text(
+                            text = "Connected as ${uiState.googleDriveAccountEmail}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(onClick = { viewModel.disconnectGoogleDrive() }) {
+                            Text("Disconnect Google Drive")
+                        }
+                    } else {
+                        Text(
+                            text = "Connect your Google account to sync data via Google Drive",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = {
+                            driveSignInLauncher.launch(viewModel.getGoogleDriveSignInIntent())
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Cloud,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text("Connect Google Drive")
+                        }
+                    }
+                }
+
+                // OneDrive connect / disconnect card
+                if (uiState.selectedStorageProvider == StorageProviderPreference.ONEDRIVE) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (uiState.oneDriveAccountEmail != null) {
+                        Text(
+                            text = "Connected as ${uiState.oneDriveAccountEmail}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(onClick = { viewModel.disconnectOneDrive() }) {
+                            Text("Disconnect OneDrive")
+                        }
+                    } else {
+                        Text(
+                            text = "Connect your Microsoft account to sync data via OneDrive",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(onClick = {
+                            oneDriveLauncher.launch(
+                                Intent(context, OneDriveOAuthActivity::class.java)
+                            )
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Cloud,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text("Connect OneDrive")
+                        }
+                    }
+                }
+            }
+        }
+        } // end if (showConnectionSection)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -382,6 +541,9 @@ private enum class StorageOption(
 ) {
     LOCAL(StorageProviderPreference.LOCAL, "Local", Icons.Default.PhoneAndroid),
     FIREBASE(StorageProviderPreference.FIREBASE, "Firebase", Icons.Default.Cloud),
+    GOOGLE_DRIVE(StorageProviderPreference.GOOGLE_DRIVE, "Google Drive", Icons.Default.Cloud),
+    DROPBOX(StorageProviderPreference.DROPBOX, "Dropbox", Icons.Default.Cloud),
+    ONEDRIVE(StorageProviderPreference.ONEDRIVE, "OneDrive", Icons.Default.Cloud),
 }
 
 private enum class ThemeOption(

@@ -5,6 +5,8 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import net.cynreub.subly.data.sync.DelegatingSyncProvider
+import net.cynreub.subly.data.sync.SyncMigratorImpl
+import net.cynreub.subly.domain.sync.SyncMigrator
 import net.cynreub.subly.domain.sync.SyncProvider
 import javax.inject.Singleton
 
@@ -15,4 +17,8 @@ abstract class SyncModule {
     @Binds
     @Singleton
     abstract fun bindSyncProvider(impl: DelegatingSyncProvider): SyncProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindSyncMigrator(impl: SyncMigratorImpl): SyncMigrator
 }
