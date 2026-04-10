@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SettingsBrightness
+import androidx.compose.material.icons.filled.Storage
 import net.cynreub.subly.data.preferences.StorageProviderPreference
 import net.cynreub.subly.ui.oauth.OneDriveOAuthActivity
 import androidx.compose.material3.AlertDialog
@@ -64,6 +65,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
+    onNavigateToStorageProvider: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -228,6 +230,34 @@ fun SettingsScreen(
                     }
                 }
 
+                // Link to full storage management screen
+                Spacer(modifier = Modifier.height(4.dp))
+                HorizontalDivider()
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        SettingsSection(title = "") {
+            SettingsItem(
+                icon = Icons.Default.Storage,
+                title = "Manage Storage & Sync",
+                subtitle = "View status, sync now, and migrate data",
+                onClick = onNavigateToStorageProvider
+            )
+        }
+
+        // Inline connect/disconnect cards — only shown when an OAuth provider is selected
+        val showConnectionSection = uiState.selectedStorageProvider in listOf(
+            StorageProviderPreference.DROPBOX,
+            StorageProviderPreference.GOOGLE_DRIVE,
+            StorageProviderPreference.ONEDRIVE
+        )
+        if (showConnectionSection) {
+        Spacer(modifier = Modifier.height(16.dp))
+
+        SettingsSection(title = "Provider Connection") {
+            Column(modifier = Modifier.padding(16.dp)) {
                 // Dropbox connect / disconnect card
                 if (uiState.selectedStorageProvider == StorageProviderPreference.DROPBOX) {
                     Spacer(modifier = Modifier.height(12.dp))
@@ -334,6 +364,7 @@ fun SettingsScreen(
                 }
             }
         }
+        } // end if (showConnectionSection)
 
         Spacer(modifier = Modifier.height(24.dp))
 

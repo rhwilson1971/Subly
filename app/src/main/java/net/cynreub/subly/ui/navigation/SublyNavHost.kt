@@ -17,6 +17,7 @@ import net.cynreub.subly.ui.subscriptions.detail.SubscriptionDetailScreen
 import net.cynreub.subly.ui.payment.PaymentMethodsScreen
 import net.cynreub.subly.ui.payment.addedit.AddEditPaymentMethodScreen
 import net.cynreub.subly.ui.settings.SettingsScreen
+import net.cynreub.subly.ui.settings.storage.StorageProviderScreen
 
 @Composable
 fun SublyNavHost(
@@ -114,7 +115,15 @@ fun SublyNavHost(
         }
 
         composable(NavDestination.Settings.route) {
-            SettingsScreen()
+            SettingsScreen(
+                onNavigateToStorageProvider = {
+                    navController.navigate(NavDestination.StorageProvider.route)
+                }
+            )
+        }
+
+        composable(NavDestination.StorageProvider.route) {
+            StorageProviderScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable(NavDestination.Categories.route) {
