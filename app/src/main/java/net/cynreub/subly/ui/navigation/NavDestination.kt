@@ -81,6 +81,11 @@ sealed class NavDestination(
         title = "Categories"
     )
 
+    data object StorageProvider : NavDestination(
+        route = "storage_provider",
+        title = "Storage & Sync"
+    )
+
     data object Login : NavDestination(
         route = "login",
         title = "Login"

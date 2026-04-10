@@ -22,7 +22,8 @@ class DelegatingSyncProvider @Inject constructor(
     private val dropboxProvider: DropboxSyncProvider,
     private val oneDriveProvider: OneDriveSyncProvider,
     private val noOpProvider: NoOpSyncProvider,
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val syncStateTracker: SyncStateTracker
 ) : SyncProvider {
 
     private suspend fun active(): SyncProvider =
@@ -34,30 +35,41 @@ class DelegatingSyncProvider @Inject constructor(
             StorageProviderPreference.LOCAL -> noOpProvider
         }
 
+    private suspend fun <T> tracked(block: suspend () -> T): T {
+        return try {
+            val result = block()
+            syncStateTracker.onSyncSuccess()
+            result
+        } catch (e: Exception) {
+            syncStateTracker.onSyncError(e.message ?: "Sync failed")
+            throw e
+        }
+    }
+
     override suspend fun upsertSubscription(subscription: Subscription) =
-        active().upsertSubscription(subscription)
+        tracked { active().upsertSubscription(subscription) }
 
     override suspend fun deleteSubscription(id: UUID) =
-        active().deleteSubscription(id)
+        tracked { active().deleteSubscription(id) }
 
     override suspend fun fetchAllSubscriptions(uid: String): List<Subscription> =
-        active().fetchAllSubscriptions(uid)
+        tracked { active().fetchAllSubscriptions(uid) }
 
     override suspend fun upsertPaymentMethod(paymentMethod: PaymentMethod) =
-        active().upsertPaymentMethod(paymentMethod)
+        tracked { active().upsertPaymentMethod(paymentMethod) }
 
     override suspend fun deletePaymentMethod(id: UUID) =
-        active().deletePaymentMethod(id)
+        tracked { active().deletePaymentMethod(id) }
 
     override suspend fun fetchAllPaymentMethods(uid: String): List<PaymentMethod> =
-        active().fetchAllPaymentMethods(uid)
+        tracked { active().fetchAllPaymentMethods(uid) }
 
     override suspend fun upsertCategory(category: Category) =
-        active().upsertCategory(category)
+        tracked { active().upsertCategory(category) }
 
     override suspend fun deleteCategory(id: UUID) =
-        active().deleteCategory(id)
+        tracked { active().deleteCategory(id) }
 
     override suspend fun fetchAllCategories(uid: String): List<Category> =
-        active().fetchAllCategories(uid)
+        tracked { active().fetchAllCategories(uid) }
 }
