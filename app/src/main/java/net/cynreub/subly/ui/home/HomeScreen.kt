@@ -122,7 +122,7 @@ private fun HomeContent(
     ) {
         item {
             Text(
-                text = "Dashboard",
+                text = "Overview",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
