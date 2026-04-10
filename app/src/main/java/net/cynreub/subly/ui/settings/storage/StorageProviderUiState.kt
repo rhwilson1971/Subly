@@ -11,6 +11,10 @@ data class StorageProviderUiState(
     val lastSyncError: String? = null,
     val isSyncing: Boolean = false,
     val isMigrating: Boolean = false,
+    /** Current step during migration (0-indexed), null when not migrating. */
+    val migrationStep: Int? = null,
+    /** Total steps in the current migration, null when not migrating. */
+    val migrationTotal: Int? = null,
     /** Provider the user has tapped but migration/confirmation is pending. */
     val pendingProvider: StorageProviderPreference? = null,
     val isLoading: Boolean = true

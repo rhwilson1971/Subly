@@ -126,13 +126,34 @@ fun StorageProviderScreen(
                     )
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
+                        val stepLabels = listOf(
+                            "Reading subscriptions…",
+                            "Copying subscriptions…",
+                            "Copying payment methods…",
+                            "Copying categories…"
+                        )
+                        val step = uiState.migrationStep ?: 0
+                        val total = uiState.migrationTotal ?: 3
                         Text(
-                            "Migrating data…",
+                            stepLabels.getOrElse(step) { "Migrating data…" },
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold
                         )
                         Spacer(Modifier.height(8.dp))
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        if (total > 0) {
+                            LinearProgressIndicator(
+                                progress = { step.toFloat() / total.toFloat() },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "Step $step of $total",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        }
                     }
                 }
             }

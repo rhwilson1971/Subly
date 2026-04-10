@@ -26,14 +26,16 @@ class DelegatingSyncProvider @Inject constructor(
     private val syncStateTracker: SyncStateTracker
 ) : SyncProvider {
 
+    fun providerFor(preference: StorageProviderPreference): SyncProvider = when (preference) {
+        StorageProviderPreference.FIREBASE -> firestoreProvider
+        StorageProviderPreference.GOOGLE_DRIVE -> googleDriveProvider
+        StorageProviderPreference.DROPBOX -> dropboxProvider
+        StorageProviderPreference.ONEDRIVE -> oneDriveProvider
+        StorageProviderPreference.LOCAL -> noOpProvider
+    }
+
     private suspend fun active(): SyncProvider =
-        when (preferencesManager.storageProviderPreference.first()) {
-            StorageProviderPreference.FIREBASE -> firestoreProvider
-            StorageProviderPreference.GOOGLE_DRIVE -> googleDriveProvider
-            StorageProviderPreference.DROPBOX -> dropboxProvider
-            StorageProviderPreference.ONEDRIVE -> oneDriveProvider
-            StorageProviderPreference.LOCAL -> noOpProvider
-        }
+        providerFor(preferencesManager.storageProviderPreference.first())
 
     private suspend fun <T> tracked(block: suspend () -> T): T {
         return try {

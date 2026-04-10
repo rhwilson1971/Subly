@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,17 +17,20 @@ import net.cynreub.subly.data.preferences.StorageProviderPreference
 import net.cynreub.subly.data.remote.dropbox.DropboxAuthManager
 import net.cynreub.subly.data.remote.gdrive.GoogleDriveAuthManager
 import net.cynreub.subly.data.remote.onedrive.MsalAuthManager
+import net.cynreub.subly.data.sync.DelegatingSyncProvider
 import net.cynreub.subly.data.sync.SyncStateTracker
 import net.cynreub.subly.domain.repository.CategoryRepository
 import net.cynreub.subly.domain.repository.PaymentMethodRepository
 import net.cynreub.subly.domain.repository.SubscriptionRepository
-import net.cynreub.subly.domain.sync.SyncProvider
+import net.cynreub.subly.domain.sync.MigrationProgress
+import net.cynreub.subly.domain.sync.SyncMigrator
 import javax.inject.Inject
 
 @HiltViewModel
 class StorageProviderViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
-    private val syncProvider: SyncProvider,
+    private val delegatingSyncProvider: DelegatingSyncProvider,
+    private val syncMigrator: SyncMigrator,
     private val syncStateTracker: SyncStateTracker,
     private val subscriptionRepository: SubscriptionRepository,
     private val paymentMethodRepository: PaymentMethodRepository,
@@ -41,6 +45,7 @@ class StorageProviderViewModel @Inject constructor(
 
     init {
         loadState()
+        observeMigrationProgress()
     }
 
     private fun loadState() {
@@ -56,19 +61,42 @@ class StorageProviderViewModel @Inject constructor(
             combine(providerFlow, syncStateTracker.lastSyncAt, syncStateTracker.lastSyncError) {
                 providerData, lastSyncAt, lastSyncError ->
                 @Suppress("UNCHECKED_CAST")
-                StorageProviderUiState(
+                _uiState.value.copy(
                     selectedProvider = providerData[0] as StorageProviderPreference,
                     googleDriveAccountEmail = providerData[1] as String?,
                     isDropboxConnected = providerData[2] != null,
                     oneDriveAccountEmail = providerData[3] as String?,
                     lastSyncAt = lastSyncAt,
                     lastSyncError = lastSyncError,
-                    isSyncing = _uiState.value.isSyncing,
-                    isMigrating = _uiState.value.isMigrating,
-                    pendingProvider = _uiState.value.pendingProvider,
                     isLoading = false
                 )
             }.collect { _uiState.value = it }
+        }
+    }
+
+    private fun observeMigrationProgress() {
+        viewModelScope.launch {
+            syncMigrator.progress.collect { progress ->
+                _uiState.value = when (progress) {
+                    is MigrationProgress.Idle -> _uiState.value.copy(
+                        isMigrating = false, migrationStep = null, migrationTotal = null
+                    )
+                    is MigrationProgress.Running -> _uiState.value.copy(
+                        isMigrating = true,
+                        migrationStep = progress.step,
+                        migrationTotal = progress.total
+                    )
+                    is MigrationProgress.Success -> _uiState.value.copy(
+                        isMigrating = false, migrationStep = null, migrationTotal = null
+                    )
+                    is MigrationProgress.Failure -> _uiState.value.copy(
+                        isMigrating = false,
+                        migrationStep = null,
+                        migrationTotal = null,
+                        lastSyncError = "Migration failed: ${progress.cause.message}"
+                    )
+                }
+            }
         }
     }
 
@@ -88,29 +116,23 @@ class StorageProviderViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(pendingProvider = null)
     }
 
-    /** Migrate all local Room data to [pendingProvider], then switch. */
+    /** Migrate all data from the current provider to [pendingProvider], then switch. */
     fun migrateAndSwitch() {
         val target = _uiState.value.pendingProvider ?: return
+        val currentPreference = _uiState.value.selectedProvider
+        _uiState.value = _uiState.value.copy(pendingProvider = null)
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isMigrating = true, pendingProvider = null)
+            val source = delegatingSyncProvider.providerFor(currentPreference)
+            val destination = delegatingSyncProvider.providerFor(target)
+            val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
             runCatching {
-                // 1. Switch preference so DelegatingSyncProvider routes to the new provider
+                syncMigrator.migrate(source, destination, uid)
+                // Only switch preference after migration succeeds
                 preferencesManager.updateStorageProvider(target)
-
-                // 2. Push all Room data to the new provider
-                val subscriptions = subscriptionRepository.getAllSubscriptions().first()
-                val paymentMethods = paymentMethodRepository.getAllPaymentMethods().first()
-                val categories = categoryRepository.getAllCategories().first()
-
-                subscriptions.forEach { syncProvider.upsertSubscription(it) }
-                paymentMethods.forEach { syncProvider.upsertPaymentMethod(it) }
-                categories.forEach { syncProvider.upsertCategory(it) }
-            }.onFailure { e ->
-                _uiState.value = _uiState.value.copy(
-                    lastSyncError = "Migration failed: ${e.message}"
-                )
+            }.onFailure {
+                // Migration failure is surfaced via observeMigrationProgress; stay on current provider
+                syncMigrator.reset()
             }
-            _uiState.value = _uiState.value.copy(isMigrating = false)
         }
     }
 
@@ -131,14 +153,13 @@ class StorageProviderViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isSyncing = true, lastSyncError = null)
             syncStateTracker.clearError()
             runCatching {
-                val uid = ""
                 val subscriptions = subscriptionRepository.getAllSubscriptions().first()
                 val paymentMethods = paymentMethodRepository.getAllPaymentMethods().first()
                 val categories = categoryRepository.getAllCategories().first()
 
-                subscriptions.forEach { syncProvider.upsertSubscription(it) }
-                paymentMethods.forEach { syncProvider.upsertPaymentMethod(it) }
-                categories.forEach { syncProvider.upsertCategory(it) }
+                subscriptions.forEach { delegatingSyncProvider.upsertSubscription(it) }
+                paymentMethods.forEach { delegatingSyncProvider.upsertPaymentMethod(it) }
+                categories.forEach { delegatingSyncProvider.upsertCategory(it) }
             }.onSuccess {
                 syncStateTracker.onSyncSuccess()
             }.onFailure { e ->
