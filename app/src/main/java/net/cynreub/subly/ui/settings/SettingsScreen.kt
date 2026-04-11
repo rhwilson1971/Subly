@@ -540,7 +540,7 @@ private enum class StorageOption(
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 ) {
     LOCAL(StorageProviderPreference.LOCAL, "Local", Icons.Default.PhoneAndroid),
-    FIREBASE(StorageProviderPreference.FIREBASE, "Firebase", Icons.Default.Cloud),
+    FIREBASE(StorageProviderPreference.FIREBASE, "Cloud", Icons.Default.Cloud),
     GOOGLE_DRIVE(StorageProviderPreference.GOOGLE_DRIVE, "Google Drive", Icons.Default.Cloud),
     DROPBOX(StorageProviderPreference.DROPBOX, "Dropbox", Icons.Default.Cloud),
     ONEDRIVE(StorageProviderPreference.ONEDRIVE, "OneDrive", Icons.Default.Cloud),

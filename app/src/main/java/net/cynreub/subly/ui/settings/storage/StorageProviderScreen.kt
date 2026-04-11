@@ -364,7 +364,7 @@ private enum class ProviderEntry(
     val supportsOAuth: Boolean
 ) {
     LOCAL(StorageProviderPreference.LOCAL, "Local only", Icons.Default.PhoneAndroid, false),
-    FIREBASE(StorageProviderPreference.FIREBASE, "Firebase", Icons.Default.Cloud, false),
+    FIREBASE(StorageProviderPreference.FIREBASE, "Cloud", Icons.Default.Cloud, false),
     GOOGLE_DRIVE(StorageProviderPreference.GOOGLE_DRIVE, "Google Drive", Icons.Default.Cloud, true),
     DROPBOX(StorageProviderPreference.DROPBOX, "Dropbox", Icons.Default.Cloud, true),
     ONEDRIVE(StorageProviderPreference.ONEDRIVE, "OneDrive", Icons.Default.Cloud, true);
@@ -378,7 +378,7 @@ private enum class ProviderEntry(
 
     fun connectionLabel(state: StorageProviderUiState): String = when (this) {
         LOCAL -> "Data stays on this device only"
-        FIREBASE -> "Syncs via your Firebase account"
+        FIREBASE -> "Syncs via Cloud (Firebase)"
         GOOGLE_DRIVE -> state.googleDriveAccountEmail?.let { "Connected as $it" } ?: "Not connected"
         DROPBOX -> if (state.isDropboxConnected) "Connected" else "Not connected"
         ONEDRIVE -> state.oneDriveAccountEmail?.let { "Connected as $it" } ?: "Not connected"
@@ -387,7 +387,7 @@ private enum class ProviderEntry(
 
 private fun StorageProviderPreference.displayName(): String = when (this) {
     StorageProviderPreference.LOCAL -> "Local"
-    StorageProviderPreference.FIREBASE -> "Firebase"
+    StorageProviderPreference.FIREBASE -> "Cloud"
     StorageProviderPreference.GOOGLE_DRIVE -> "Google Drive"
     StorageProviderPreference.DROPBOX -> "Dropbox"
     StorageProviderPreference.ONEDRIVE -> "OneDrive"
