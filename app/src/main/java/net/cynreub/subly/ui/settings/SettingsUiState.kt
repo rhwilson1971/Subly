@@ -8,6 +8,8 @@ data class SettingsUiState(
     val morningNotificationTime: String = "09:00",
     val eveningNotificationTime: String = "18:00",
     val defaultReminderDays: Int = 2,
+    val morningReminderEnabled: Boolean = true,
+    val eveningReminderEnabled: Boolean = true,
     val hasNotificationPermission: Boolean = false,
     val showPermissionDialog: Boolean = false,
     val showMorningTimePicker: Boolean = false,
