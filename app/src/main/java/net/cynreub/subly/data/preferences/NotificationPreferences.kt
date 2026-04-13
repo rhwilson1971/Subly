@@ -4,5 +4,7 @@ data class NotificationPreferences(
     val notificationsEnabled: Boolean = true,
     val morningNotificationTime: String = "09:00", // HH:mm format
     val eveningNotificationTime: String = "18:00",
-    val defaultReminderDays: Int = 2
+    val defaultReminderDays: Int = 2,
+    val morningReminderEnabled: Boolean = true,
+    val eveningReminderEnabled: Boolean = true
 )
