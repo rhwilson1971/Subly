@@ -29,6 +29,8 @@ class PreferencesManager @Inject constructor(
         val MORNING_TIME = stringPreferencesKey("morning_notification_time")
         val EVENING_TIME = stringPreferencesKey("evening_notification_time")
         val DEFAULT_REMINDER_DAYS = intPreferencesKey("default_reminder_days")
+        val MORNING_REMINDER_ENABLED = booleanPreferencesKey("morning_reminder_enabled")
+        val EVENING_REMINDER_ENABLED = booleanPreferencesKey("evening_reminder_enabled")
         val THEME = stringPreferencesKey("theme_preference")
         val STORAGE_PROVIDER = stringPreferencesKey("storage_provider")
         val GOOGLE_DRIVE_ACCOUNT_EMAIL = stringPreferencesKey("google_drive_account_email")
@@ -49,7 +51,9 @@ class PreferencesManager @Inject constructor(
                 notificationsEnabled = preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] ?: true,
                 morningNotificationTime = preferences[PreferencesKeys.MORNING_TIME] ?: "09:00",
                 eveningNotificationTime = preferences[PreferencesKeys.EVENING_TIME] ?: "18:00",
-                defaultReminderDays = preferences[PreferencesKeys.DEFAULT_REMINDER_DAYS] ?: 2
+                defaultReminderDays = preferences[PreferencesKeys.DEFAULT_REMINDER_DAYS] ?: 2,
+                morningReminderEnabled = preferences[PreferencesKeys.MORNING_REMINDER_ENABLED] ?: true,
+                eveningReminderEnabled = preferences[PreferencesKeys.EVENING_REMINDER_ENABLED] ?: true
             )
         }
 
@@ -74,6 +78,18 @@ class PreferencesManager @Inject constructor(
     suspend fun updateDefaultReminderDays(days: Int) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.DEFAULT_REMINDER_DAYS] = days
+        }
+    }
+
+    suspend fun updateMorningReminderEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.MORNING_REMINDER_ENABLED] = enabled
+        }
+    }
+
+    suspend fun updateEveningReminderEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.EVENING_REMINDER_ENABLED] = enabled
         }
     }
 
