@@ -96,6 +96,11 @@ sealed class NavDestination(
         title = "Register"
     )
 
+    data object ProfileSetup : NavDestination(
+        route = "profile_setup",
+        title = "Profile Setup"
+    )
+
     companion object {
         val bottomNavItems = listOf(Home, Subscriptions, PaymentMethods, Settings)
     }

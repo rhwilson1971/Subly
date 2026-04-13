@@ -65,7 +65,9 @@ fun SublyApp(
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val isAuthRoute = currentRoute == NavDestination.Login.route || currentRoute == NavDestination.Register.route
+    val isAuthRoute = currentRoute == NavDestination.Login.route
+        || currentRoute == NavDestination.Register.route
+        || currentRoute == NavDestination.ProfileSetup.route
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),

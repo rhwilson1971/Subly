@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import net.cynreub.subly.ui.auth.LoginScreen
 import net.cynreub.subly.ui.auth.RegisterScreen
+import net.cynreub.subly.ui.profile.ProfileSetupScreen
 import net.cynreub.subly.ui.categories.CategoriesScreen
 import net.cynreub.subly.ui.home.HomeScreen
 import net.cynreub.subly.ui.subscriptions.SubscriptionsScreen
@@ -49,6 +50,16 @@ fun SublyNavHost(
                 onNavigateToLogin = { navController.popBackStack() },
                 onAuthSuccess = {
                     onAuthSuccess()
+                    navController.navigate(NavDestination.ProfileSetup.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(NavDestination.ProfileSetup.route) {
+            ProfileSetupScreen(
+                onNavigateNext = {
                     navController.navigate(NavDestination.Home.route) {
                         popUpTo(0) { inclusive = true }
                     }
