@@ -21,9 +21,23 @@ class NotificationScheduler @Inject constructor(
         private const val EVENING_WORK_NAME = "evening_reminder_work"
     }
 
-    fun scheduleDailyReminders(morningTime: String, eveningTime: String) {
-        scheduleMorningReminder(morningTime)
-        scheduleEveningReminder(eveningTime)
+    fun scheduleDailyReminders(
+        morningTime: String,
+        eveningTime: String,
+        morningEnabled: Boolean = true,
+        eveningEnabled: Boolean = true
+    ) {
+        if (morningEnabled) {
+            scheduleMorningReminder(morningTime)
+        } else {
+            WorkManager.getInstance(context).cancelUniqueWork(MORNING_WORK_NAME)
+        }
+
+        if (eveningEnabled) {
+            scheduleEveningReminder(eveningTime)
+        } else {
+            WorkManager.getInstance(context).cancelUniqueWork(EVENING_WORK_NAME)
+        }
     }
 
     private fun scheduleMorningReminder(time: String) {
