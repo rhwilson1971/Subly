@@ -24,13 +24,13 @@ import net.cynreub.subly.ui.settings.storage.StorageProviderScreen
 @Composable
 fun SublyNavHost(
     navController: NavHostController,
-    isLoggedIn: Boolean,
+    startDestination: String,
     onAuthSuccess: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     NavHost(
         navController = navController,
-        startDestination = if (isLoggedIn) NavDestination.Home.route else NavDestination.Login.route,
+        startDestination = startDestination,
         modifier = modifier
     ) {
         // Auth graph

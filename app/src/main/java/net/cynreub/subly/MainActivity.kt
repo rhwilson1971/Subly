@@ -4,25 +4,26 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import net.cynreub.subly.data.preferences.PreferencesManager
 import net.cynreub.subly.data.preferences.ThemePreference
 import net.cynreub.subly.notification.NotificationHelper
 import net.cynreub.subly.ui.components.SublyBottomBar
 import net.cynreub.subly.ui.components.SublyTopBar
+import net.cynreub.subly.ui.main.MainViewModel
 import net.cynreub.subly.ui.navigation.NavDestination
 import net.cynreub.subly.ui.navigation.SublyNavHost
 import net.cynreub.subly.ui.theme.SublyTheme
@@ -34,6 +35,8 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var preferencesManager: PreferencesManager
 
+    private val mainViewModel: MainViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -43,14 +46,23 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themePreference by preferencesManager.themePreference
                 .collectAsStateWithLifecycle(initialValue = ThemePreference.SYSTEM)
+            val startupState by mainViewModel.startupState.collectAsStateWithLifecycle()
 
             SublyTheme(themePreference = themePreference) {
-                var isLoggedIn by remember { mutableStateOf(FirebaseAuth.getInstance().currentUser != null) }
-                SublyApp(
-                    isLoggedIn = isLoggedIn,
-                    onAuthSuccess = { isLoggedIn = true },
-                    subscriptionIdFromNotification = subscriptionIdFromNotification
-                )
+                if (!startupState.isReady) {
+                    // Blank loading screen while Firestore profile is fetched
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    SublyApp(
+                        startDestination = startupState.startDestination,
+                        subscriptionIdFromNotification = subscriptionIdFromNotification
+                    )
+                }
             }
         }
     }
@@ -58,8 +70,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun SublyApp(
-    isLoggedIn: Boolean,
-    onAuthSuccess: () -> Unit,
+    startDestination: String,
     subscriptionIdFromNotification: String? = null
 ) {
     val navController = rememberNavController()
@@ -81,8 +92,8 @@ fun SublyApp(
     ) { innerPadding ->
         SublyNavHost(
             navController = navController,
-            isLoggedIn = isLoggedIn,
-            onAuthSuccess = onAuthSuccess,
+            startDestination = startDestination,
+            onAuthSuccess = {},
             modifier = Modifier.padding(innerPadding)
         )
     }
