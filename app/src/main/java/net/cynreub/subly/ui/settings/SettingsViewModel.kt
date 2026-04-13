@@ -61,6 +61,8 @@ class SettingsViewModel @Inject constructor(
                     morningNotificationTime = notifications.morningNotificationTime,
                     eveningNotificationTime = notifications.eveningNotificationTime,
                     defaultReminderDays = notifications.defaultReminderDays,
+                    morningReminderEnabled = notifications.morningReminderEnabled,
+                    eveningReminderEnabled = notifications.eveningReminderEnabled,
                     hasNotificationPermission = permissionHandler.isNotificationPermissionGranted(),
                     isLoading = false,
                     selectedTheme = theme,
@@ -107,6 +109,20 @@ class SettingsViewModel @Inject constructor(
 
     fun onDefaultReminderDaysChange(days: Int) {
         viewModelScope.launch { preferencesManager.updateDefaultReminderDays(days) }
+    }
+
+    fun onMorningReminderEnabledChange(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.updateMorningReminderEnabled(enabled)
+            if (_uiState.value.notificationsEnabled) scheduleNotifications()
+        }
+    }
+
+    fun onEveningReminderEnabledChange(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.updateEveningReminderEnabled(enabled)
+            if (_uiState.value.notificationsEnabled) scheduleNotifications()
+        }
     }
 
     fun showMorningTimePicker() { _uiState.value = _uiState.value.copy(showMorningTimePicker = true) }
