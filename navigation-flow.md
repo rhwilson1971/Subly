@@ -3,7 +3,10 @@ flowchart TD
     Start([App Launch]) --> AuthCheck{Logged In?}
 
     AuthCheck -- No --> Login
-    AuthCheck -- Yes --> Home
+    AuthCheck -- "Yes\n(MainViewModel fetches\nFirestore profile)" --> OnboardingCheck{onboardingCompleted?}
+
+    OnboardingCheck -- No / no profile --> Onboarding
+    OnboardingCheck -- Yes --> Home
 
     subgraph Auth
         Login[Login Screen]
@@ -14,8 +17,23 @@ flowchart TD
 
     Login -- "Login success" --> Home
 
+    Register -- "Register success" --> ProfileSetup
+
+    subgraph NewUserFlow["New User Flow (no bottom nav)"]
+        ProfileSetup["Profile Setup Screen\n(Full Name · Email · DOB · Phone)"]
+        Onboarding["Onboarding Screen\n(4-page HorizontalPager)"]
+
+        ProfileSetup -- "Continue\n(saves to Firestore users/{uid})" --> Onboarding
+
+        Onboarding -- "Page 1: Welcome to Subly" --> Onboarding
+        Onboarding -- "Page 2: Sync setup\n'Set Up Sync Now'" --> StorageProviderScreen
+        StorageProviderScreen -- "Back" --> Onboarding
+        Onboarding -- "Page 3: Add Subscriptions" --> Onboarding
+        Onboarding -- "Page 4: Payment Methods\n'Get Started' or Skip\n(marks onboardingCompleted: true)" --> Home
+    end
+
     subgraph BottomNav["Bottom Navigation"]
-        Home[Home / Dashboard]
+        Home[Home / Overview]
         Subscriptions[Subscriptions List]
         PaymentMethods[Payment Methods]
         Settings[Settings]
@@ -46,6 +64,31 @@ flowchart TD
 
     AddEditPaymentMethod_New -- "Save / Back" --> PaymentMethods
     AddEditPaymentMethod_Edit -- "Save / Back" --> PaymentMethods
+
+    Settings -- "Manage Storage & Sync" --> StorageProviderScreen
+
+    subgraph StorageSync["Storage & Sync (route: storage_provider)"]
+        StorageProviderScreen["Storage Provider Screen\n(Local · Cloud · Google Drive\nDropbox · OneDrive)"]
+
+        StorageProviderScreen -- "Connect Google Drive" --> GoogleSignIn["Google Sign-In OAuth\n(play-services-auth)"]
+        GoogleSignIn -- "Success / Cancel" --> StorageProviderScreen
+
+        StorageProviderScreen -- "Connect Dropbox" --> DropboxOAuth["DropboxOAuthActivity\n(PKCE · browser redirect\nsubly://dropbox-oauth)"]
+        DropboxOAuth -- "Success / Cancel" --> StorageProviderScreen
+
+        StorageProviderScreen -- "Connect OneDrive" --> OneDriveOAuth["OneDriveOAuthActivity\n(MSAL 5.3.0 · msauth://)"]
+        OneDriveOAuth -- "Success / Cancel" --> StorageProviderScreen
+
+        StorageProviderScreen -- "Switch provider\n(different from active)" --> MigrationDialog["Migration Dialog\n(Migrate data then switch\nor just switch)"]
+        MigrationDialog -- "Confirm migrate" --> MigrationProgress["Migration Progress\n(step-based linear indicator\nsubscriptions → payment methods\n→ categories)"]
+        MigrationProgress -- "Complete / Error" --> StorageProviderScreen
+        MigrationDialog -- "Just switch / Cancel" --> StorageProviderScreen
+
+        StorageProviderScreen -- "Sync Now" --> StorageProviderScreen
+        StorageProviderScreen -- "Disconnect provider" --> StorageProviderScreen
+    end
+
+    StorageProviderScreen -- "Back (from Settings)" --> Settings
 
     Settings["Settings\n(terminal screen)"]
 ```
