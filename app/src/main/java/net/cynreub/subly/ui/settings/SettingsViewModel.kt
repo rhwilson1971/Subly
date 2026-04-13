@@ -212,7 +212,9 @@ class SettingsViewModel @Inject constructor(
         val state = _uiState.value
         notificationScheduler.scheduleDailyReminders(
             morningTime = state.morningNotificationTime,
-            eveningTime = state.eveningNotificationTime
+            eveningTime = state.eveningNotificationTime,
+            morningEnabled = state.morningReminderEnabled,
+            eveningEnabled = state.eveningReminderEnabled
         )
     }
 }
