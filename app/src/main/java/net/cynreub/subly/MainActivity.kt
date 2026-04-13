@@ -68,6 +68,7 @@ fun SublyApp(
     val isAuthRoute = currentRoute == NavDestination.Login.route
         || currentRoute == NavDestination.Register.route
         || currentRoute == NavDestination.ProfileSetup.route
+        || currentRoute == NavDestination.Onboarding.route
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
