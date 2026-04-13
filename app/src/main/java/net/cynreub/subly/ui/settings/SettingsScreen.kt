@@ -189,7 +189,18 @@ fun SettingsScreen(
                 title = "Morning Reminder",
                 subtitle = uiState.morningNotificationTime,
                 enabled = uiState.notificationsEnabled && uiState.hasNotificationPermission,
-                onClick = { viewModel.showMorningTimePicker() }
+                onClick = {
+                    if (uiState.morningReminderEnabled) viewModel.showMorningTimePicker()
+                },
+                trailing = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Switch(
+                            checked = uiState.morningReminderEnabled,
+                            onCheckedChange = { viewModel.onMorningReminderEnabledChange(it) },
+                            enabled = uiState.notificationsEnabled && uiState.hasNotificationPermission
+                        )
+                    }
+                }
             )
 
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
@@ -199,7 +210,18 @@ fun SettingsScreen(
                 title = "Evening Reminder",
                 subtitle = uiState.eveningNotificationTime,
                 enabled = uiState.notificationsEnabled && uiState.hasNotificationPermission,
-                onClick = { viewModel.showEveningTimePicker() }
+                onClick = {
+                    if (uiState.eveningReminderEnabled) viewModel.showEveningTimePicker()
+                },
+                trailing = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Switch(
+                            checked = uiState.eveningReminderEnabled,
+                            onCheckedChange = { viewModel.onEveningReminderEnabledChange(it) },
+                            enabled = uiState.notificationsEnabled && uiState.hasNotificationPermission
+                        )
+                    }
+                }
             )
         }
 
@@ -373,18 +395,62 @@ fun SettingsScreen(
 
         // Default Reminder Days
         SettingsSection(title = "Defaults") {
-            SettingsItem(
-                icon = Icons.Default.Info,
-                title = "Default Reminder Days",
-                subtitle = "Remind ${uiState.defaultReminderDays} days before payment",
-                trailing = {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "Default Reminder Days",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Remind ${uiState.defaultReminderDays} day${if (uiState.defaultReminderDays == 1) "" else "s"} before payment",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                     Text(
                         text = "${uiState.defaultReminderDays}",
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                androidx.compose.material3.Slider(
+                    value = uiState.defaultReminderDays.toFloat(),
+                    onValueChange = { viewModel.onDefaultReminderDaysChange(it.toInt()) },
+                    valueRange = 1f..30f,
+                    steps = 28,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "1 day",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "30 days",
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            )
+            }
         }
 
         uiState.error?.let { errorMessage ->
