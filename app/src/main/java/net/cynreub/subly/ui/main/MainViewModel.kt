@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import net.cynreub.subly.domain.model.User
+import net.cynreub.subly.domain.repository.AuthRepository
 import net.cynreub.subly.domain.repository.UserProfileRepository
 import net.cynreub.subly.ui.navigation.NavDestination
 import javax.inject.Inject
@@ -20,11 +22,15 @@ data class StartupState(
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val userProfileRepository: UserProfileRepository,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _startupState = MutableStateFlow(StartupState())
     val startupState: StateFlow<StartupState> = _startupState.asStateFlow()
+
+    private val _currentUser = MutableStateFlow(authRepository.currentUser)
+    val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
 
     init {
         resolveStartDestination()
@@ -48,6 +54,13 @@ class MainViewModel @Inject constructor(
             }
 
             _startupState.value = StartupState(isReady = true, startDestination = destination)
+        }
+    }
+
+    fun signOut() {
+        viewModelScope.launch {
+            authRepository.signOut()
+            _currentUser.value = null
         }
     }
 }

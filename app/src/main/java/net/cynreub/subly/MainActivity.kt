@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.hilt.navigation.compose.hiltViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import net.cynreub.subly.data.preferences.PreferencesManager
 import net.cynreub.subly.data.preferences.ThemePreference
@@ -71,7 +72,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SublyApp(
     startDestination: String,
-    subscriptionIdFromNotification: String? = null
+    subscriptionIdFromNotification: String? = null,
+    mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -81,10 +83,20 @@ fun SublyApp(
         || currentRoute == NavDestination.ProfileSetup.route
         || currentRoute == NavDestination.Onboarding.route
 
+    val currentUser by mainViewModel.currentUser.collectAsStateWithLifecycle()
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            if (!isAuthRoute) SublyTopBar()
+            if (!isAuthRoute) SublyTopBar(
+                user = currentUser,
+                onSignOut = {
+                    mainViewModel.signOut()
+                    navController.navigate(NavDestination.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
         },
         bottomBar = {
             if (!isAuthRoute) SublyBottomBar(navController = navController)
