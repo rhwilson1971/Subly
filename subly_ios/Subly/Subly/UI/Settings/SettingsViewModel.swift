@@ -28,34 +28,53 @@ final class SettingsViewModel {
     func onNotificationsEnabledChange(_ enabled: Bool) {
         prefs.notificationsEnabled = enabled
         uiState.notificationsEnabled = enabled
+        if enabled {
+            rescheduleNotifications()
+        } else {
+            NotificationScheduler.shared.cancelReminders()
+        }
     }
 
     func onMorningReminderEnabledChange(_ enabled: Bool) {
         prefs.morningReminderEnabled = enabled
         uiState.morningReminderEnabled = enabled
+        rescheduleNotifications()
     }
 
     func onEveningReminderEnabledChange(_ enabled: Bool) {
         prefs.eveningReminderEnabled = enabled
         uiState.eveningReminderEnabled = enabled
+        rescheduleNotifications()
     }
 
     func onMorningTimeChange(_ time: String) {
         prefs.morningReminderTime = time
         uiState.morningReminderTime = time
         uiState.showMorningTimePicker = false
+        rescheduleNotifications()
     }
 
     func onEveningTimeChange(_ time: String) {
         prefs.eveningReminderTime = time
         uiState.eveningReminderTime = time
         uiState.showEveningTimePicker = false
+        rescheduleNotifications()
     }
 
     func onReminderDaysChange(_ days: Int) {
         let clamped = max(1, min(30, days))
         prefs.reminderDaysBefore = clamped
         uiState.reminderDaysBefore = clamped
+    }
+
+    private func rescheduleNotifications() {
+        guard prefs.notificationsEnabled else { return }
+        NotificationScheduler.shared.scheduleDailyReminders(
+            morningTime: prefs.morningReminderTime,
+            eveningTime: prefs.eveningReminderTime,
+            morningEnabled: prefs.morningReminderEnabled,
+            eveningEnabled: prefs.eveningReminderEnabled
+        )
     }
 
     // MARK: - Appearance
