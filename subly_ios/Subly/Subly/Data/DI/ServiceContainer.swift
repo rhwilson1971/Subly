@@ -12,6 +12,8 @@ final class ServiceContainer: ObservableObject {
     let subscriptionRepository: SubscriptionRepository
     let categoryRepository: CategoryRepository
     let paymentMethodRepository: PaymentMethodRepository
+    let authRepository: AuthRepository
+    let userProfileRepository: UserProfileRepository
 
     // MARK: - Use Cases
     let calculateMonthlyTotal: CalculateMonthlyTotalUseCase
@@ -36,9 +38,11 @@ final class ServiceContainer: ObservableObject {
         let catRepo = CategoryRepositoryImpl(modelContext: context, subscriptionRepository: subRepo)
         let pmRepo  = PaymentMethodRepositoryImpl(modelContext: context)
 
-        self.subscriptionRepository = subRepo
-        self.categoryRepository     = catRepo
+        self.subscriptionRepository  = subRepo
+        self.categoryRepository      = catRepo
         self.paymentMethodRepository = pmRepo
+        self.authRepository          = AuthRepositoryImpl()
+        self.userProfileRepository   = UserProfileRepositoryImpl()
 
         self.calculateMonthlyTotal    = CalculateMonthlyTotalUseCase(subscriptionRepository: subRepo)
         self.getUpcomingSubscriptions = GetUpcomingSubscriptionsUseCase(subscriptionRepository: subRepo)
