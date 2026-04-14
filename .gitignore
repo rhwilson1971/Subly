@@ -1,6 +1,7 @@
+# Android
 *.iml
 .gradle
-/local.properties
+/subly_android/local.properties
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml
@@ -8,11 +9,21 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 .DS_Store
-/build
-/captures
+/subly_android/build
+/subly_android/captures
 .externalNativeBuild
 .cxx
 local.properties
 
 google-services.json
-/.claude/worktrees/blissful-brattain/
+
+# Xcode / iOS
+*.xcuserstate
+xcuserdata/
+DerivedData/
+*.xcworkspace/xcuserdata/
+subly_ios/**/.build/
+subly_ios/**/Pods/
+
+# Claude
+/.claude/worktrees/
