@@ -84,7 +84,7 @@ struct PaymentMethodsView: View {
             Button("Cancel", role: .cancel) { viewModel.dismissDelete() }
         } message: {
             if let m = state.deletingMethod {
-                Text("Delete "\(m.paymentMethod.nickname)"? This cannot be undone.")
+                Text("Delete \"\(m.paymentMethod.nickname)\"? This cannot be undone.")
             }
         }
         .alert("Error", isPresented: Binding(
