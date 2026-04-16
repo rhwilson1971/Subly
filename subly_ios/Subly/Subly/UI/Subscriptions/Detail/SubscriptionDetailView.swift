@@ -150,10 +150,10 @@ struct SubscriptionDetailView: View {
 
             Divider()
 
-            detailRow(label: "Next Billing", value: subscription.nextBillingDate.formatted(date: .medium, time: .omitted))
+            detailRow(label: "Next Billing", value: subscription.nextBillingDate.formatted(date: .abbreviated, time: .omitted))
             Divider().padding(.leading)
 
-            detailRow(label: "Start Date", value: subscription.startDate.formatted(date: .medium, time: .omitted))
+            detailRow(label: "Start Date", value: subscription.startDate.formatted(date: .abbreviated, time: .omitted))
             Divider().padding(.leading)
 
             detailRow(label: "Frequency", value: subscription.frequency.displayName)

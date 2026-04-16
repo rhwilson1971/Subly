@@ -6,6 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		851317DC2F8DEE9E00AEDFBF /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 851317DB2F8DEE9E00AEDFBF /* Algorithms */; };
+		851317DF2F8DF0C300AEDFBF /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 851317DE2F8DF0C300AEDFBF /* FirebaseAuth */; };
+		851317E12F8DF0C300AEDFBF /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 851317E02F8DF0C300AEDFBF /* FirebaseFirestore */; };
+		851317E32F8DF0C300AEDFBF /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 851317E22F8DF0C300AEDFBF /* FirebaseStorage */; };
+		851317E62F8DF8AA00AEDFBF /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 851317E52F8DF8AA00AEDFBF /* GoogleSignIn */; };
+		851317E82F8DF8AA00AEDFBF /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 851317E72F8DF8AA00AEDFBF /* GoogleSignInSwift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		853A1B582F8DB6FE001F9D78 /* Subly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Subly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +32,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				851317E62F8DF8AA00AEDFBF /* GoogleSignIn in Frameworks */,
+				851317DC2F8DEE9E00AEDFBF /* Algorithms in Frameworks */,
+				851317E32F8DF0C300AEDFBF /* FirebaseStorage in Frameworks */,
+				851317E82F8DF8AA00AEDFBF /* GoogleSignInSwift in Frameworks */,
+				851317DF2F8DF0C300AEDFBF /* FirebaseAuth in Frameworks */,
+				851317E12F8DF0C300AEDFBF /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +80,12 @@
 			);
 			name = Subly;
 			packageProductDependencies = (
+				851317DB2F8DEE9E00AEDFBF /* Algorithms */,
+				851317DE2F8DF0C300AEDFBF /* FirebaseAuth */,
+				851317E02F8DF0C300AEDFBF /* FirebaseFirestore */,
+				851317E22F8DF0C300AEDFBF /* FirebaseStorage */,
+				851317E52F8DF8AA00AEDFBF /* GoogleSignIn */,
+				851317E72F8DF8AA00AEDFBF /* GoogleSignInSwift */,
 			);
 			productName = Subly;
 			productReference = 853A1B582F8DB6FE001F9D78 /* Subly.app */;
@@ -94,6 +115,11 @@
 			);
 			mainGroup = 853A1B4F2F8DB6FE001F9D78;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				851317DA2F8DEE9E00AEDFBF /* XCRemoteSwiftPackageReference "swift-algorithms" */,
+				851317DD2F8DF0C300AEDFBF /* XCLocalSwiftPackageReference "../../../../firebase-ios-sdk" */,
+				851317E42F8DF8AA00AEDFBF /* XCLocalSwiftPackageReference "../../../../GoogleSignIn-iOS" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 853A1B592F8DB6FE001F9D78 /* Products */;
 			projectDirPath = "";
@@ -332,6 +358,56 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		851317DD2F8DF0C300AEDFBF /* XCLocalSwiftPackageReference "../../../../firebase-ios-sdk" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../../../../firebase-ios-sdk";
+		};
+		851317E42F8DF8AA00AEDFBF /* XCLocalSwiftPackageReference "../../../../GoogleSignIn-iOS" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../../../../GoogleSignIn-iOS";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		851317DA2F8DEE9E00AEDFBF /* XCRemoteSwiftPackageReference "swift-algorithms" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/swift-algorithms.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		851317DB2F8DEE9E00AEDFBF /* Algorithms */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 851317DA2F8DEE9E00AEDFBF /* XCRemoteSwiftPackageReference "swift-algorithms" */;
+			productName = Algorithms;
+		};
+		851317DE2F8DF0C300AEDFBF /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FirebaseAuth;
+		};
+		851317E02F8DF0C300AEDFBF /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FirebaseFirestore;
+		};
+		851317E22F8DF0C300AEDFBF /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FirebaseStorage;
+		};
+		851317E52F8DF8AA00AEDFBF /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GoogleSignIn;
+		};
+		851317E72F8DF8AA00AEDFBF /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = GoogleSignInSwift;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 853A1B502F8DB6FE001F9D78 /* Project object */;
 }

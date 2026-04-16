@@ -82,7 +82,7 @@ struct LoginView: View {
 
             Spacer()
 
-            Button(onNavigateToRegister) {
+            Button(action: onNavigateToRegister) {
                 Text("Don't have an account? ")
                     .foregroundStyle(.secondary)
                 + Text("Register").bold()

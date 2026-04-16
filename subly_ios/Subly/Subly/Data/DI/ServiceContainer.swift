@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 import SwiftData
 
 /// Holds all repository and use-case instances for injection via SwiftUI Environment.

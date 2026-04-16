@@ -89,7 +89,10 @@ struct CategoriesView: View {
             Button("Cancel", role: .cancel) { viewModel.dismissDelete() }
         } message: {
             if let c = state.deleteCandidate {
-                Text("Delete "\(c.category.displayName)"? This cannot be undone.")
+                
+                let category = c.category.displayName.description
+                
+                Text("Delete \(category)? This cannot be undone.")
             }
         }
         // Delete error alert

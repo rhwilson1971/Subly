@@ -59,7 +59,7 @@ final class CategoriesViewModel {
             $0.category.displayName.caseInsensitiveCompare(trimmed) == .orderedSame
         }
         if duplicate {
-            uiState.saveError = "A category named "\(trimmed)" already exists"
+            uiState.saveError = "A category named \(trimmed) already exists"
             return
         }
 

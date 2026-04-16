@@ -1,6 +1,6 @@
 import Foundation
 
-struct Subscription: Identifiable, Equatable, Codable {
+struct Subscription: Identifiable, Equatable, Hashable, Codable {
     var id: UUID
     var name: String
     var categoryId: UUID

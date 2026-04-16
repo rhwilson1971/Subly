@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct SublyApp: App {
@@ -18,7 +19,7 @@ struct SublyApp: App {
                 .environmentObject(services)
                 .environmentObject(prefs)
                 .preferredColorScheme(prefs.theme.colorScheme)
+                .modelContainer(services.modelContainer)
         }
-        .modelContainer(services.modelContainer)
     }
 }

@@ -12,7 +12,15 @@
       "Bash(git pull:*)",
       "mcp__notion__notion-search",
       "mcp__notion__notion-create-pages",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "mcp__claude_ai_Linear__get_project",
+      "Bash(git commit:*)",
+      "mcp__claude_ai_Linear__list_issues",
+      "Bash(git mv:*)",
+      "Bash(python3:*)",
+      "Bash(xxd)"
     ],
     "deny": [],
     "ask": []

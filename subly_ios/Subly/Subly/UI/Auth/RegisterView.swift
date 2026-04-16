@@ -98,7 +98,7 @@ struct RegisterView: View {
 
             Spacer()
 
-            Button(onNavigateToLogin) {
+            Button(action: onNavigateToLogin) {
                 Text("Already have an account? ")
                     .foregroundStyle(.secondary)
                 + Text("Sign In").bold()
