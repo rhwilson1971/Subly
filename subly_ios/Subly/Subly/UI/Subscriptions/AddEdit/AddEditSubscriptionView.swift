@@ -89,7 +89,7 @@ struct AddEditSubscriptionView: View {
             }
 
             // MARK: Billing
-            Section("Billing") {
+           Section("Billing") {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         TextField("Amount", text: Binding(
@@ -129,7 +129,7 @@ struct AddEditSubscriptionView: View {
                     }
                 }
                 .buttonStyle(.plain)
-
+//
                 Button {
                     viewModel.uiState.showDatePicker = true
                 } label: {
@@ -175,7 +175,7 @@ struct AddEditSubscriptionView: View {
 
                 HStack {
                     Text("Reminder")
-                    Spacer()
+                    Spacer() 
                     Stepper(
                         "\(state.reminderDaysBefore) day\(state.reminderDaysBefore == 1 ? "" : "s") before",
                         value: Binding(
@@ -219,7 +219,6 @@ struct AddEditSubscriptionView: View {
             )
             .presentationDetents([.medium])
         }
-        // Currency picker
         .sheet(isPresented: Binding(
             get: { viewModel.uiState.showCurrencyPicker },
             set: { viewModel.uiState.showCurrencyPicker = $0 }
@@ -229,44 +228,73 @@ struct AddEditSubscriptionView: View {
             }
             .presentationDetents([.medium])
         }
-        // Frequency picker
         .sheet(isPresented: Binding(
             get: { viewModel.uiState.showFrequencyPicker },
             set: { viewModel.uiState.showFrequencyPicker = $0 }
         )) {
-            PickerSheet(
-                title: "Frequency",
-                items: BillingFrequency.allCases,
-                selectedId: state.selectedFrequency,
-                label: { $0.displayName },
-                onSelect: { viewModel.onFrequencySelected($0) }
-            )
-            .presentationDetents([.medium])
+
+
+            
+            
+//            PickerSheet(
+//                title: "Frequency",
+//                iems: BillingFrequency.allCases,
+//                selectedId: state.selectedFrequency,
+//                label: { $0.displayName },
+//                
+//                
+//            )
+//            .presentationDetents([.medium])
+            
+//            PickerSheet(
+//                           title: "Frequency",
+//                           items: BillingFrequency.allCases,
+//                           selectedId: state.selectedFrequency,
+//                           label: { $0.displayName },
+//                           onSelect: { viewModel.onFrequencySelected($0) }
+//                       )
+//                       .presentationDetents([.medium])
         }
-        // Payment method picker
-        .sheet(isPresented: Binding(
-            get: { viewModel.uiState.showPaymentMethodPicker },
-            set: { viewModel.uiState.showPaymentMethodPicker = $0 }
-        )) {
-            PaymentMethodPickerSheet(
-                methods: state.availablePaymentMethods,
-                selectedId: state.selectedPaymentMethodId
-            ) { method in
-                viewModel.onPaymentMethodSelected(method)
-            }
-            .presentationDetents([.medium])
-        }
-        // Date picker
-        .sheet(isPresented: Binding(
-            get: { viewModel.uiState.showDatePicker },
-            set: { viewModel.uiState.showDatePicker = $0 }
-        )) {
-            DatePickerSheet(selected: state.startDate) { date in
-                viewModel.onStartDateSelected(date)
-            }
-            .presentationDetents([.medium])
-        }
+//        // Frequency picker
+//        .sheet(isPresented: Binding(
+//            get: { viewModel.uiState.showFrequencyPicker },
+//            set: { viewModel.uiState.showFrequencyPicker = $0 }
+//        )) {
+//            PickerSheet(
+//                title: "Frequency",
+//                items: BillingFrequency.allCases,
+//                selectedId: state.selectedFrequency,
+//                label: { $0.displayName },
+//                onSelect: { viewModel.onFrequencySelected($0) }
+//            )
+//            .presentationDetents([.medium])
+//        }
+//        // Payment method picker
+//        .sheet(isPresented: Binding(
+//            get: { viewModel.uiState.showPaymentMethodPicker },
+//            set: { viewModel.uiState.showPaymentMethodPicker = $0 }
+//        )) {
+//            PaymentMethodPickerSheet(
+//                methods: state.availablePaymentMethods,
+//                selectedId: state.selectedPaymentMethodId
+//            ) { method in
+//                viewModel.onPaymentMethodSelected(method)
+//            }
+//            .presentationDetents([.medium])
+//        }
+//        // Date picker
+//        .sheet(isPresented: Binding(
+//            get: { viewModel.uiState.showDatePicker },
+//            set: { viewModel.uiState.showDatePicker = $0 }
+//        )) {
+//            DatePickerSheet(selected: state.startDate) { date in
+//                viewModel.onStartDateSelected(date)
+//            }
+//            .presentationDetents([.medium])
+//        }
     }
+    
+    
 }
 
 // MARK: - Picker Sheet
