@@ -123,12 +123,7 @@ private struct PaymentMethodRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: item.paymentMethod.type.sfSymbol)
-                .font(.title2)
-                .foregroundColor(.accentColor)
-                .frame(width: 44, height: 44)
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
+            PaymentBrandMark(type: item.paymentMethod.type, size: 44)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.paymentMethod.nickname)
