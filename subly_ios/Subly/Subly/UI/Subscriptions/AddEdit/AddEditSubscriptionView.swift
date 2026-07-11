@@ -16,7 +16,7 @@ struct AddEditSubscriptionView: View {
         NavigationStack {
             Group {
                 if let viewModel {
-                    formContent(viewModel: viewModel)
+                    AddEditSubscriptionFormView(viewModel: viewModel)
                 } else {
                     ProgressView()
                 }
@@ -48,250 +48,292 @@ struct AddEditSubscriptionView: View {
             }
         }
     }
+}
+
+// MARK: - Form Content
+
+/// Split out from `AddEditSubscriptionView` so each section/sheet is its own
+/// small, independently type-checked expression. The previous single
+/// `Form { ... }` with six sections and five chained `.sheet` modifiers was
+/// too large for the Swift type-checker to diagnose reliably.
+private struct AddEditSubscriptionFormView: View {
+    let viewModel: AddEditSubscriptionViewModel
+
+    private var state: AddEditSubscriptionUiState { viewModel.uiState }
+
+    var body: some View {
+        formView
+            .sheet(isPresented: categoryPickerPresented) { categoryPickerContent }
+            .sheet(isPresented: currencyPickerPresented) { currencyPickerContent }
+            .sheet(isPresented: frequencyPickerPresented) { frequencyPickerContent }
+            .sheet(isPresented: paymentMethodPickerPresented) { paymentMethodPickerContent }
+            .sheet(isPresented: datePickerPresented) { datePickerContent }
+    }
+
+    private var formView: some View {
+        Form {
+            basicInfoSection
+            billingSection
+            paymentSection
+            settingsSection
+            notesSection
+            errorSection
+        }
+    }
+
+    // MARK: Sheet content
 
     @ViewBuilder
-    private func formContent(viewModel: AddEditSubscriptionViewModel) -> some View {
-        let state = viewModel.uiState
+    private var categoryPickerContent: some View {
+        PickerSheet(
+            title: "Category",
+            items: state.availableCategories,
+            selectedId: state.selectedCategoryId,
+            label: { "\($0.emoji) \($0.displayName)" },
+            onSelect: { viewModel.onCategorySelected($0) }
+        )
+        .presentationDetents([.medium])
+    }
 
-        Form {
-            // MARK: Basic Info
-            Section("Basic Info") {
-                VStack(alignment: .leading, spacing: 4) {
-                    TextField("Name", text: Binding(
-                        get: { state.name },
-                        set: { viewModel.onNameChange($0) }
-                    ))
-                    if let error = state.nameError {
-                        Text(error)
-                            .font(.caption)
-                            .foregroundColor(.red)
-                    }
-                }
+    @ViewBuilder
+    private var currencyPickerContent: some View {
+        CurrencyPickerSheet(selected: state.currency) { currency in
+            viewModel.onCurrencySelected(currency)
+        }
+        .presentationDetents([.medium])
+    }
 
-                // Category picker row
-                Button {
-                    viewModel.uiState.showCategoryPicker = true
-                } label: {
-                    HStack {
-                        Text("Category")
-                            .foregroundColor(.primary)
-                        Spacer()
-                        if let cat = state.selectedCategory {
-                            Text("\(cat.emoji) \(cat.displayName)")
-                                .foregroundColor(.secondary)
-                        }
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
+    @ViewBuilder
+    private var frequencyPickerContent: some View {
+        PickerSheet(
+            title: "Frequency",
+            items: BillingFrequency.allCases,
+            selectedId: state.selectedFrequency.id,
+            label: { $0.displayName },
+            onSelect: { viewModel.onFrequencySelected($0) }
+        )
+        .presentationDetents([.medium])
+    }
 
-            // MARK: Billing
-           Section("Billing") {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        TextField("Amount", text: Binding(
-                            get: { state.amount },
-                            set: { viewModel.onAmountChange($0) }
-                        ))
-                        .keyboardType(.decimalPad)
+    @ViewBuilder
+    private var paymentMethodPickerContent: some View {
+        PaymentMethodPickerSheet(
+            methods: state.availablePaymentMethods,
+            selectedId: state.selectedPaymentMethodId
+        ) { method in
+            viewModel.onPaymentMethodSelected(method)
+        }
+        .presentationDetents([.medium])
+    }
 
-                        Button {
-                            viewModel.uiState.showCurrencyPicker = true
-                        } label: {
-                            Text(state.currency)
-                                .foregroundColor(.accentColor)
-                                .fontWeight(.medium)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    if let error = state.amountError {
-                        Text(error)
-                            .font(.caption)
-                            .foregroundColor(.red)
-                    }
-                }
+    @ViewBuilder
+    private var datePickerContent: some View {
+        DatePickerSheet(selected: state.startDate) { date in
+            viewModel.onStartDateSelected(date)
+        }
+        .presentationDetents([.medium])
+    }
 
-                Button {
-                    viewModel.uiState.showFrequencyPicker = true
-                } label: {
-                    HStack {
-                        Text("Frequency")
-                            .foregroundColor(.primary)
-                        Spacer()
-                        Text(state.selectedFrequency.displayName)
-                            .foregroundColor(.secondary)
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .buttonStyle(.plain)
-//
-                Button {
-                    viewModel.uiState.showDatePicker = true
-                } label: {
-                    HStack {
-                        Text("Start Date")
-                            .foregroundColor(.primary)
-                        Spacer()
-                        Text(state.startDate, style: .date)
-                            .foregroundColor(.secondary)
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
+    // MARK: Sections
 
-            // MARK: Payment
-            Section("Payment") {
-                Button {
-                    viewModel.uiState.showPaymentMethodPicker = true
-                } label: {
-                    HStack {
-                        Text("Payment Method")
-                            .foregroundColor(.primary)
-                        Spacer()
-                        Text(state.selectedPaymentMethod?.nickname ?? "None")
-                            .foregroundColor(.secondary)
-                        Image(systemName: "chevron.right")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-
-            // MARK: Settings
-            Section("Settings") {
-                Toggle("Active", isOn: Binding(
-                    get: { state.isActive },
-                    set: { viewModel.onIsActiveChange($0) }
+    @ViewBuilder
+    private var basicInfoSection: some View {
+        Section("Basic Info") {
+            VStack(alignment: .leading, spacing: 4) {
+                TextField("Name", text: Binding(
+                    get: { state.name },
+                    set: { viewModel.onNameChange($0) }
                 ))
-
-                HStack {
-                    Text("Reminder")
-                    Spacer() 
-                    Stepper(
-                        "\(state.reminderDaysBefore) day\(state.reminderDaysBefore == 1 ? "" : "s") before",
-                        value: Binding(
-                            get: { state.reminderDaysBefore },
-                            set: { viewModel.onReminderDaysChange($0) }
-                        ),
-                        in: 0...30
-                    )
-                }
-            }
-
-            // MARK: Notes
-            Section("Notes") {
-                TextField("Optional notes…", text: Binding(
-                    get: { state.notes },
-                    set: { viewModel.onNotesChange($0) }
-                ), axis: .vertical)
-                .lineLimit(3...6)
-            }
-
-            // MARK: Error Banner
-            if let error = state.error {
-                Section {
+                if let error = state.nameError {
                     Text(error)
+                        .font(.caption)
                         .foregroundColor(.red)
-                        .font(.footnote)
                 }
+            }
+
+            // Category picker row
+            Button {
+                viewModel.uiState.showCategoryPicker = true
+            } label: {
+                HStack {
+                    Text("Category")
+                        .foregroundColor(.primary)
+                    Spacer()
+                    if let cat = state.selectedCategory {
+                        Text("\(cat.emoji) \(cat.displayName)")
+                            .foregroundColor(.secondary)
+                    }
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    @ViewBuilder
+    private var billingSection: some View {
+        Section("Billing") {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    TextField("Amount", text: Binding(
+                        get: { state.amount },
+                        set: { viewModel.onAmountChange($0) }
+                    ))
+                    .keyboardType(.decimalPad)
+
+                    Button {
+                        viewModel.uiState.showCurrencyPicker = true
+                    } label: {
+                        Text(state.currency)
+                            .foregroundColor(.accentColor)
+                            .fontWeight(.medium)
+                    }
+                    .buttonStyle(.plain)
+                }
+                if let error = state.amountError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+            }
+
+            Button {
+                viewModel.uiState.showFrequencyPicker = true
+            } label: {
+                HStack {
+                    Text("Frequency")
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Text(state.selectedFrequency.displayName)
+                        .foregroundColor(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                viewModel.uiState.showDatePicker = true
+            } label: {
+                HStack {
+                    Text("Start Date")
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Text(state.startDate, style: .date)
+                        .foregroundColor(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    @ViewBuilder
+    private var paymentSection: some View {
+        Section("Payment") {
+            Button {
+                viewModel.uiState.showPaymentMethodPicker = true
+            } label: {
+                HStack {
+                    Text("Payment Method")
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Text(state.selectedPaymentMethod?.nickname ?? "None")
+                        .foregroundColor(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    @ViewBuilder
+    private var settingsSection: some View {
+        Section("Settings") {
+            Toggle("Active", isOn: Binding(
+                get: { state.isActive },
+                set: { viewModel.onIsActiveChange($0) }
+            ))
+
+            HStack {
+                Text("Reminder")
+                Spacer()
+                Stepper(
+                    "\(state.reminderDaysBefore) day\(state.reminderDaysBefore == 1 ? "" : "s") before",
+                    value: Binding(
+                        get: { state.reminderDaysBefore },
+                        set: { viewModel.onReminderDaysChange($0) }
+                    ),
+                    in: 0...30
+                )
             }
         }
-        // Category picker
-        .sheet(isPresented: Binding(
+    }
+
+    @ViewBuilder
+    private var notesSection: some View {
+        Section("Notes") {
+            TextField("Optional notes…", text: Binding(
+                get: { state.notes },
+                set: { viewModel.onNotesChange($0) }
+            ), axis: .vertical)
+            .lineLimit(3...6)
+        }
+    }
+
+    @ViewBuilder
+    private var errorSection: some View {
+        if let error = state.error {
+            Section {
+                Text(error)
+                    .foregroundColor(.red)
+                    .font(.footnote)
+            }
+        }
+    }
+
+    // MARK: Sheet presentation bindings
+
+    private var categoryPickerPresented: Binding<Bool> {
+        Binding(
             get: { viewModel.uiState.showCategoryPicker },
             set: { viewModel.uiState.showCategoryPicker = $0 }
-        )) {
-            PickerSheet(
-                title: "Category",
-                items: state.availableCategories,
-                selectedId: state.selectedCategoryId,
-                label: { "\($0.emoji) \($0.displayName)" },
-                onSelect: { viewModel.onCategorySelected($0) }
-            )
-            .presentationDetents([.medium])
-        }
-        .sheet(isPresented: Binding(
+        )
+    }
+
+    private var currencyPickerPresented: Binding<Bool> {
+        Binding(
             get: { viewModel.uiState.showCurrencyPicker },
             set: { viewModel.uiState.showCurrencyPicker = $0 }
-        )) {
-            CurrencyPickerSheet(selected: state.currency) { currency in
-                viewModel.onCurrencySelected(currency)
-            }
-            .presentationDetents([.medium])
-        }
-        .sheet(isPresented: Binding(
+        )
+    }
+
+    private var frequencyPickerPresented: Binding<Bool> {
+        Binding(
             get: { viewModel.uiState.showFrequencyPicker },
             set: { viewModel.uiState.showFrequencyPicker = $0 }
-        )) {
+        )
+    }
 
-
-            
-            
-            PickerSheet(
-                title: "Frequency",
-                iems: BillingFrequency.allCases,
-                selectedId: state.selectedFrequency,
-                label: { $0.displayName },
-                
-                
-            )
-            .presentationDetents([.medium])
-            
-            PickerSheet(
-                           title: "Frequency",
-                           items: BillingFrequency.allCases,
-                           selectedId: state.selectedFrequency,
-                           label: { $0.displayName },
-                           onSelect: { viewModel.onFrequencySelected($0) }
-                       )
-                       .presentationDetents([.medium])
-        }
-        // Frequency picker
-        .sheet(isPresented: Binding(
-            get: { viewModel.uiState.showFrequencyPicker },
-            set: { viewModel.uiState.showFrequencyPicker = $0 }
-        )) {
-            PickerSheet(
-                title: "Frequency",
-                items: BillingFrequency.allCases,
-                selectedId: state.selectedFrequency,
-                label: { $0.displayName },
-                onSelect: { viewModel.onFrequencySelected($0) }
-            )
-            .presentationDetents([.medium])
-        }
-        // Payment method picker
-        .sheet(isPresented: Binding(
+    private var paymentMethodPickerPresented: Binding<Bool> {
+        Binding(
             get: { viewModel.uiState.showPaymentMethodPicker },
             set: { viewModel.uiState.showPaymentMethodPicker = $0 }
-        )) {
-            PaymentMethodPickerSheet(
-                methods: state.availablePaymentMethods,
-                selectedId: state.selectedPaymentMethodId
-            ) { method in
-                viewModel.onPaymentMethodSelected(method)
-            }
-            .presentationDetents([.medium])
-        }
-        // Date picker
-        .sheet(isPresented: Binding(
+        )
+    }
+
+    private var datePickerPresented: Binding<Bool> {
+        Binding(
             get: { viewModel.uiState.showDatePicker },
             set: { viewModel.uiState.showDatePicker = $0 }
-        )) {
-            DatePickerSheet(selected: state.startDate) { date in
-                viewModel.onStartDateSelected(date)
-            }
-            .presentationDetents([.medium])
-        }
+        )
     }
 }
 
