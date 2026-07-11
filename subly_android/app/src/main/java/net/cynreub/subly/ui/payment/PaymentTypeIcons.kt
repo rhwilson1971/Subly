@@ -12,10 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.HelpOutline
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -216,35 +213,6 @@ private fun TwoToneText(
     Row {
         BrandText(text = first, color = firstColor, size = size, fontSizeRatio = 0.17f)
         BrandText(text = second, color = secondColor, size = size, fontSizeRatio = 0.17f)
-    }
-}
-
-/**
- * Get the Material Icon for a given PaymentType
- * Note: Using simplified icons as extended Material Icons require additional dependencies
- */
-fun getPaymentTypeIcon(type: PaymentType): ImageVector {
-    return when (type) {
-        // Credit Card Brands - using Star icon
-        PaymentType.VISA,
-        PaymentType.MASTERCARD,
-        PaymentType.DISCOVER,
-        PaymentType.AMEX,
-        PaymentType.DEBIT_CARD -> Icons.Default.Star
-
-        // Digital Payment Services - using Info icon
-        PaymentType.PAYPAL,
-        PaymentType.VENMO,
-        PaymentType.CASHAPP,
-        PaymentType.AFFIRM,
-        PaymentType.KLARNA -> Icons.Default.Info
-
-        // Traditional Methods - using Star icon
-        PaymentType.BANK_TRANSFER,
-        PaymentType.CASH -> Icons.Default.Star
-
-        // Fallback
-        PaymentType.OTHER -> Icons.Default.MoreVert
     }
 }
 
