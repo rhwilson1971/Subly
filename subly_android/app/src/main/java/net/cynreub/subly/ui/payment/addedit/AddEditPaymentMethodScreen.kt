@@ -50,8 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.cynreub.subly.domain.model.PaymentType
+import net.cynreub.subly.ui.payment.PaymentBrandIcon
 import net.cynreub.subly.ui.payment.formatPaymentType
-import net.cynreub.subly.ui.payment.getPaymentTypeIcon
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -154,11 +154,9 @@ fun AddEditPaymentMethodScreen(
                                         .padding(16.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(
-                                        imageVector = getPaymentTypeIcon(uiState.selectedType),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp),
-                                        tint = MaterialTheme.colorScheme.primary
+                                    PaymentBrandIcon(
+                                        type = uiState.selectedType,
+                                        size = 20.dp
                                     )
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Text(
@@ -376,11 +374,9 @@ private fun PaymentTypeRow(
             onClick = onClick
         )
         Spacer(modifier = Modifier.width(8.dp))
-        Icon(
-            imageVector = getPaymentTypeIcon(type),
-            contentDescription = null,
-            modifier = Modifier.size(24.dp),
-            tint = MaterialTheme.colorScheme.primary
+        PaymentBrandIcon(
+            type = type,
+            size = 24.dp
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
