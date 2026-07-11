@@ -236,65 +236,63 @@ struct AddEditSubscriptionView: View {
 
             
             
-//            PickerSheet(
-//                title: "Frequency",
-//                iems: BillingFrequency.allCases,
-//                selectedId: state.selectedFrequency,
-//                label: { $0.displayName },
-//                
-//                
-//            )
-//            .presentationDetents([.medium])
+            PickerSheet(
+                title: "Frequency",
+                iems: BillingFrequency.allCases,
+                selectedId: state.selectedFrequency,
+                label: { $0.displayName },
+                
+                
+            )
+            .presentationDetents([.medium])
             
-//            PickerSheet(
-//                           title: "Frequency",
-//                           items: BillingFrequency.allCases,
-//                           selectedId: state.selectedFrequency,
-//                           label: { $0.displayName },
-//                           onSelect: { viewModel.onFrequencySelected($0) }
-//                       )
-//                       .presentationDetents([.medium])
+            PickerSheet(
+                           title: "Frequency",
+                           items: BillingFrequency.allCases,
+                           selectedId: state.selectedFrequency,
+                           label: { $0.displayName },
+                           onSelect: { viewModel.onFrequencySelected($0) }
+                       )
+                       .presentationDetents([.medium])
         }
-//        // Frequency picker
-//        .sheet(isPresented: Binding(
-//            get: { viewModel.uiState.showFrequencyPicker },
-//            set: { viewModel.uiState.showFrequencyPicker = $0 }
-//        )) {
-//            PickerSheet(
-//                title: "Frequency",
-//                items: BillingFrequency.allCases,
-//                selectedId: state.selectedFrequency,
-//                label: { $0.displayName },
-//                onSelect: { viewModel.onFrequencySelected($0) }
-//            )
-//            .presentationDetents([.medium])
-//        }
-//        // Payment method picker
-//        .sheet(isPresented: Binding(
-//            get: { viewModel.uiState.showPaymentMethodPicker },
-//            set: { viewModel.uiState.showPaymentMethodPicker = $0 }
-//        )) {
-//            PaymentMethodPickerSheet(
-//                methods: state.availablePaymentMethods,
-//                selectedId: state.selectedPaymentMethodId
-//            ) { method in
-//                viewModel.onPaymentMethodSelected(method)
-//            }
-//            .presentationDetents([.medium])
-//        }
-//        // Date picker
-//        .sheet(isPresented: Binding(
-//            get: { viewModel.uiState.showDatePicker },
-//            set: { viewModel.uiState.showDatePicker = $0 }
-//        )) {
-//            DatePickerSheet(selected: state.startDate) { date in
-//                viewModel.onStartDateSelected(date)
-//            }
-//            .presentationDetents([.medium])
-//        }
+        // Frequency picker
+        .sheet(isPresented: Binding(
+            get: { viewModel.uiState.showFrequencyPicker },
+            set: { viewModel.uiState.showFrequencyPicker = $0 }
+        )) {
+            PickerSheet(
+                title: "Frequency",
+                items: BillingFrequency.allCases,
+                selectedId: state.selectedFrequency,
+                label: { $0.displayName },
+                onSelect: { viewModel.onFrequencySelected($0) }
+            )
+            .presentationDetents([.medium])
+        }
+        // Payment method picker
+        .sheet(isPresented: Binding(
+            get: { viewModel.uiState.showPaymentMethodPicker },
+            set: { viewModel.uiState.showPaymentMethodPicker = $0 }
+        )) {
+            PaymentMethodPickerSheet(
+                methods: state.availablePaymentMethods,
+                selectedId: state.selectedPaymentMethodId
+            ) { method in
+                viewModel.onPaymentMethodSelected(method)
+            }
+            .presentationDetents([.medium])
+        }
+        // Date picker
+        .sheet(isPresented: Binding(
+            get: { viewModel.uiState.showDatePicker },
+            set: { viewModel.uiState.showDatePicker = $0 }
+        )) {
+            DatePickerSheet(selected: state.startDate) { date in
+                viewModel.onStartDateSelected(date)
+            }
+            .presentationDetents([.medium])
+        }
     }
-    
-    
 }
 
 // MARK: - Picker Sheet
