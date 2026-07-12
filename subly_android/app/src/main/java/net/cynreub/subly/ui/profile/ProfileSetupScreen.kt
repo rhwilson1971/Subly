@@ -18,6 +18,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
@@ -44,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -53,7 +56,8 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileSetupScreen(
-    onNavigateNext: () -> Unit,
+    onNavigateToLogin: () -> Unit,
+    onSignUpSuccess: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProfileSetupViewModel = hiltViewModel()
 ) {
@@ -62,7 +66,7 @@ fun ProfileSetupScreen(
     LaunchedEffect(uiState.navigateNext) {
         if (uiState.navigateNext) {
             viewModel.onNavigateNextHandled()
-            onNavigateNext()
+            onSignUpSuccess()
         }
     }
 
@@ -70,7 +74,7 @@ fun ProfileSetupScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("Set Up Your Profile") }
+                title = { Text("Create Your Profile") }
             )
         }
     ) { paddingValues ->
@@ -81,7 +85,6 @@ fun ProfileSetupScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Profile picture placeholder
             item {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -104,7 +107,7 @@ fun ProfileSetupScreen(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Profile photo coming soon",
+                        text = "Create an account to enable Cloud Sync",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -112,29 +115,49 @@ fun ProfileSetupScreen(
                 }
             }
 
-            // Full Name — required
+            // Email — required
+            item {
+                OutlinedTextField(
+                    value = uiState.email,
+                    onValueChange = viewModel::onEmailChange,
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = uiState.emailError != null,
+                    supportingText = uiState.emailError?.let { { Text(it) } }
+                )
+            }
+
+            // Password — required, strong
+            item {
+                Column {
+                    OutlinedTextField(
+                        value = uiState.password,
+                        onValueChange = viewModel::onPasswordChange,
+                        label = { Text("Password") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        isError = uiState.password.isNotEmpty() && uiState.passwordErrors.isNotEmpty()
+                    )
+                    if (uiState.password.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        PasswordRequirement("At least 8 characters", uiState.password.length >= 8)
+                        PasswordRequirement("At least one uppercase letter", uiState.password.any { it.isUpperCase() })
+                        PasswordRequirement("At least one lowercase letter", uiState.password.any { it.isLowerCase() })
+                        PasswordRequirement("At least one number", uiState.password.any { it.isDigit() })
+                    }
+                }
+            }
+
+            // Full Name — optional
             item {
                 OutlinedTextField(
                     value = uiState.fullName,
                     onValueChange = viewModel::onFullNameChange,
-                    label = { Text("Full Name") },
+                    label = { Text("Full Name (Optional)") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    isError = uiState.fullNameError != null,
-                    supportingText = uiState.fullNameError?.let { { Text(it) } }
-                )
-            }
-
-            // Email — read-only, pre-populated from Firebase Auth
-            item {
-                OutlinedTextField(
-                    value = uiState.email,
-                    onValueChange = {},
-                    label = { Text("Email") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    readOnly = true,
-                    supportingText = { Text("Linked to your account") }
+                    singleLine = true
                 )
             }
 
@@ -212,11 +235,11 @@ fun ProfileSetupScreen(
                 }
             }
 
-            // Save / Continue button
+            // Create account button
             item {
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = viewModel::saveProfile,
+                    onClick = viewModel::signUp,
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !uiState.isSaving
                 ) {
@@ -229,9 +252,18 @@ fun ProfileSetupScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                     }
                     Text(
-                        text = if (uiState.isSaving) "Saving…" else "Continue",
+                        text = if (uiState.isSaving) "Creating account…" else "Create Account",
                         fontWeight = FontWeight.SemiBold
                     )
+                }
+            }
+
+            item {
+                TextButton(
+                    onClick = onNavigateToLogin,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Already have an account? Sign In")
                 }
             }
 
@@ -247,13 +279,30 @@ fun ProfileSetupScreen(
     }
 }
 
+@Composable
+private fun PasswordRequirement(label: String, met: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = if (met) Icons.Default.Check else Icons.Default.Close,
+            contentDescription = null,
+            tint = if (met) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (met) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DateOfBirthPickerDialog(
     onDateSelected: (LocalDate) -> Unit,
     onDismiss: () -> Unit
 ) {
-    // Default to 25 years ago as a sensible starting point
     val defaultMillis = LocalDate.now().minusYears(25).toEpochDay() * 24 * 60 * 60 * 1000
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = defaultMillis)
 
