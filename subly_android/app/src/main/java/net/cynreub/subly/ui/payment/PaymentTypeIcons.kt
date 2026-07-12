@@ -55,7 +55,7 @@ fun PaymentBrandIcon(
     val neutralBorder = MaterialTheme.colorScheme.outlineVariant
 
     when (type) {
-        PaymentType.VISA -> BrandChip(modifier, size, cornerRadius, neutralBackground, neutralBorder) {
+        PaymentType.VISA -> BrandChip(modifier, size, cornerRadius, Color.White, neutralBorder) {
             BrandText(text = "VISA", color = VisaBlue, size = size, italic = true)
         }
 

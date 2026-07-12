@@ -85,6 +85,7 @@ struct PaymentBrandMark: View {
 
     private var backgroundColor: Color {
         switch type {
+        case .visa: return .white
         case .amex: return Color(red: 0.0, green: 0.435, blue: 0.812)
         case .venmo: return Color(red: 0.0, green: 0.549, blue: 1.0)
         case .cashApp, .affirm: return .black

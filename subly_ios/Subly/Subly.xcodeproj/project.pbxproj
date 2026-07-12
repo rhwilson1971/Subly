@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		851317DC2F8DEE9E00AEDFBF /* Algorithms in Frameworks */ = {isa = PBXBuildFile; productRef = 851317DB2F8DEE9E00AEDFBF /* Algorithms */; };
 		851317DF2F8DF0C300AEDFBF /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 851317DE2F8DF0C300AEDFBF /* FirebaseAuth */; };
+		851317EA2F8DF8AA00AEDFBF /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 851317EB2F8DF8AA00AEDFBF /* FirebaseCore */; };
 		851317E12F8DF0C300AEDFBF /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 851317E02F8DF0C300AEDFBF /* FirebaseFirestore */; };
 		851317E32F8DF0C300AEDFBF /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 851317E22F8DF0C300AEDFBF /* FirebaseStorage */; };
 		851317E62F8DF8AA00AEDFBF /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 851317E52F8DF8AA00AEDFBF /* GoogleSignIn */; };
@@ -38,6 +39,7 @@
 				851317E82F8DF8AA00AEDFBF /* GoogleSignInSwift in Frameworks */,
 				851317DF2F8DF0C300AEDFBF /* FirebaseAuth in Frameworks */,
 				851317E12F8DF0C300AEDFBF /* FirebaseFirestore in Frameworks */,
+				851317EA2F8DF8AA00AEDFBF /* FirebaseCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -86,6 +88,7 @@
 				851317E22F8DF0C300AEDFBF /* FirebaseStorage */,
 				851317E52F8DF8AA00AEDFBF /* GoogleSignIn */,
 				851317E72F8DF8AA00AEDFBF /* GoogleSignInSwift */,
+				851317EB2F8DF8AA00AEDFBF /* FirebaseCore */,
 			);
 			productName = Subly;
 			productReference = 853A1B582F8DB6FE001F9D78 /* Subly.app */;
@@ -398,6 +401,10 @@
 		851317E22F8DF0C300AEDFBF /* FirebaseStorage */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FirebaseStorage;
+		};
+		851317EB2F8DF8AA00AEDFBF /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FirebaseCore;
 		};
 		851317E52F8DF8AA00AEDFBF /* GoogleSignIn */ = {
 			isa = XCSwiftPackageProductDependency;
