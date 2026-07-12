@@ -63,7 +63,8 @@ struct AddEditPaymentMethodView: View {
                     viewModel.uiState.showTypePicker = true
                 } label: {
                     HStack {
-                        Label(state.selectedType.displayName, systemImage: state.selectedType.sfSymbol)
+                        PaymentBrandMark(type: state.selectedType, size: 28)
+                        Text(state.selectedType.displayName)
                             .foregroundColor(.primary)
                         Spacer()
                         Image(systemName: "chevron.right")
@@ -121,9 +122,7 @@ private struct PaymentTypePickerSheet: View {
                     dismiss()
                 } label: {
                     HStack(spacing: 12) {
-                        Image(systemName: type.sfSymbol)
-                            .foregroundColor(.accentColor)
-                            .frame(width: 24)
+                        PaymentBrandMark(type: type, size: 28)
                         Text(type.displayName)
                             .foregroundColor(.primary)
                         Spacer()

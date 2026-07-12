@@ -201,11 +201,9 @@ private fun PaymentMethodListItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Payment Type Icon
-            Icon(
-                imageVector = getPaymentTypeIcon(paymentMethod.type),
-                contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.primary
+            PaymentBrandIcon(
+                type = paymentMethod.type,
+                size = 40.dp
             )
 
             Spacer(modifier = Modifier.width(16.dp))

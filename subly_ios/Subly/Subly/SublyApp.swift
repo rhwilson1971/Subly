@@ -7,11 +7,17 @@
 
 import SwiftUI
 import SwiftData
+import FirebaseCore
 
 @main
 struct SublyApp: App {
-    @StateObject private var services = ServiceContainer()
+    @StateObject private var services: ServiceContainer
     @StateObject private var prefs = PreferencesManager.shared
+
+    init() {
+        FirebaseApp.configure()
+        _services = StateObject(wrappedValue: ServiceContainer())
+    }
 
     var body: some Scene {
         WindowGroup {
