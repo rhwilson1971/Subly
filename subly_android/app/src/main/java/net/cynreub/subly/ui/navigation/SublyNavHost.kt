@@ -8,7 +8,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import net.cynreub.subly.ui.auth.LoginScreen
-import net.cynreub.subly.ui.auth.RegisterScreen
 import net.cynreub.subly.ui.onboarding.OnboardingScreen
 import net.cynreub.subly.ui.profile.ProfileSetupScreen
 import net.cynreub.subly.ui.categories.CategoriesScreen
@@ -36,7 +35,7 @@ fun SublyNavHost(
         // Auth graph
         composable(NavDestination.Login.route) {
             LoginScreen(
-                onNavigateToRegister = { navController.navigate(NavDestination.Register.route) },
+                onNavigateToRegister = { navController.navigate(NavDestination.ProfileSetup.route) },
                 onAuthSuccess = {
                     onAuthSuccess()
                     navController.navigate(NavDestination.Home.route) {
@@ -46,23 +45,13 @@ fun SublyNavHost(
             )
         }
 
-        composable(NavDestination.Register.route) {
-            RegisterScreen(
-                onNavigateToLogin = { navController.popBackStack() },
-                onAuthSuccess = {
-                    onAuthSuccess()
-                    navController.navigate(NavDestination.ProfileSetup.route) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            )
-        }
-
         composable(NavDestination.ProfileSetup.route) {
             ProfileSetupScreen(
-                onNavigateNext = {
-                    navController.navigate(NavDestination.Onboarding.route) {
-                        popUpTo(NavDestination.ProfileSetup.route) { inclusive = true }
+                onNavigateToLogin = { navController.navigate(NavDestination.Login.route) },
+                onSignUpSuccess = {
+                    onAuthSuccess()
+                    navController.navigate(NavDestination.Home.route) {
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )
@@ -143,12 +132,17 @@ fun SublyNavHost(
             SettingsScreen(
                 onNavigateToStorageProvider = {
                     navController.navigate(NavDestination.StorageProvider.route)
-                }
+                },
+                onNavigateToSignUp = { navController.navigate(NavDestination.ProfileSetup.route) },
+                onNavigateToLogin = { navController.navigate(NavDestination.Login.route) }
             )
         }
 
         composable(NavDestination.StorageProvider.route) {
-            StorageProviderScreen(onNavigateBack = { navController.popBackStack() })
+            StorageProviderScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToSignUp = { navController.navigate(NavDestination.ProfileSetup.route) }
+            )
         }
 
         composable(NavDestination.Categories.route) {

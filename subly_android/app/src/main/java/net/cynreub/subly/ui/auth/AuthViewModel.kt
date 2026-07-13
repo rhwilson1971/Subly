@@ -28,16 +28,6 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun register(email: String, password: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            authRepository.registerWithEmail(email, password).fold(
-                onSuccess = { _uiState.value = _uiState.value.copy(isLoading = false, isAuthenticated = true) },
-                onFailure = { e -> _uiState.value = _uiState.value.copy(isLoading = false, error = e.message) }
-            )
-        }
-    }
-
     fun signInWithGoogle(idToken: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
