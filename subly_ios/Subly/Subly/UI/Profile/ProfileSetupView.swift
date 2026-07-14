@@ -1,48 +1,79 @@
 import SwiftUI
 
 struct ProfileSetupView: View {
-    let onNavigateNext: () -> Void
+    let onNavigateToLogin: () -> Void
+    let onSignUpSuccess: () -> Void
 
     @State private var viewModel: ProfileSetupViewModel
 
-    init(userProfileRepository: UserProfileRepository, onNavigateNext: @escaping () -> Void) {
-        self.onNavigateNext = onNavigateNext
-        _viewModel = State(initialValue: ProfileSetupViewModel(userProfileRepository: userProfileRepository))
+    init(
+        authRepository: AuthRepository,
+        userProfileRepository: UserProfileRepository,
+        onNavigateToLogin: @escaping () -> Void,
+        onSignUpSuccess: @escaping () -> Void
+    ) {
+        self.onNavigateToLogin = onNavigateToLogin
+        self.onSignUpSuccess = onSignUpSuccess
+        _viewModel = State(initialValue: ProfileSetupViewModel(
+            authRepository: authRepository,
+            userProfileRepository: userProfileRepository
+        ))
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Avatar placeholder
                     VStack(spacing: 8) {
                         Image(systemName: "person.circle.fill")
                             .font(.system(size: 80))
                             .foregroundStyle(.secondary)
-                        Text("Profile photo coming soon")
+                        Text("Create an account to enable Cloud Sync")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                     .padding(.top, 8)
 
-                    // Full Name
+                    // Email — required
                     VStack(alignment: .leading, spacing: 4) {
-                        TextField("Full Name", text: Binding(
-                            get: { viewModel.uiState.fullName },
-                            set: { viewModel.onFullNameChange($0) }
+                        TextField("Email", text: Binding(
+                            get: { viewModel.uiState.email },
+                            set: { viewModel.onEmailChange($0) }
                         ))
                         .textFieldStyle(.roundedBorder)
-                        .textContentType(.name)
-                        if let error = viewModel.uiState.fullNameError {
+                        .textContentType(.emailAddress)
+                        .keyboardType(.emailAddress)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        if let error = viewModel.uiState.emailError {
                             Text(error).font(.caption).foregroundStyle(.red)
                         }
                     }
 
-                    // Email (read-only)
-                    TextField("Email", text: .constant(viewModel.uiState.email))
+                    // Password — required, strong
+                    VStack(alignment: .leading, spacing: 4) {
+                        SecureField("Password", text: Binding(
+                            get: { viewModel.uiState.password },
+                            set: { viewModel.onPasswordChange($0) }
+                        ))
                         .textFieldStyle(.roundedBorder)
-                        .disabled(true)
-                        .foregroundStyle(.secondary)
+                        .textContentType(.newPassword)
+
+                        if !viewModel.uiState.password.isEmpty {
+                            passwordRequirement("At least 8 characters", met: viewModel.uiState.password.count >= 8)
+                            passwordRequirement("At least one uppercase letter", met: viewModel.uiState.password.contains(where: { $0.isUppercase }))
+                            passwordRequirement("At least one lowercase letter", met: viewModel.uiState.password.contains(where: { $0.isLowercase }))
+                            passwordRequirement("At least one number", met: viewModel.uiState.password.contains(where: { $0.isNumber }))
+                        }
+                    }
+
+                    // Full Name — optional
+                    TextField("Full Name (Optional)", text: Binding(
+                        get: { viewModel.uiState.fullName },
+                        set: { viewModel.onFullNameChange($0) }
+                    ))
+                    .textFieldStyle(.roundedBorder)
+                    .textContentType(.name)
 
                     // Date of Birth
                     dateOfBirthRow
@@ -56,7 +87,6 @@ struct ProfileSetupView: View {
                     .textContentType(.telephoneNumber)
                     .keyboardType(.phonePad)
 
-                    // Error banner
                     if let error = viewModel.uiState.error {
                         Text(error)
                             .font(.callout)
@@ -67,18 +97,17 @@ struct ProfileSetupView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 8))
                     }
 
-                    // Save button
                     Button {
-                        viewModel.saveProfile()
+                        viewModel.signUp()
                     } label: {
                         Group {
                             if viewModel.uiState.isSaving {
                                 HStack(spacing: 8) {
                                     ProgressView().tint(.white)
-                                    Text("Saving…")
+                                    Text("Creating account…")
                                 }
                             } else {
-                                Text("Continue").fontWeight(.semibold)
+                                Text("Create Account").fontWeight(.semibold)
                             }
                         }
                         .frame(maxWidth: .infinity)
@@ -86,16 +115,20 @@ struct ProfileSetupView: View {
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .disabled(viewModel.uiState.isSaving)
+
+                    Button(action: onNavigateToLogin) {
+                        Text("Already have an account? Sign In")
+                    }
                 }
                 .padding(16)
             }
-            .navigationTitle("Set Up Your Profile")
+            .navigationTitle("Create Your Profile")
             .navigationBarTitleDisplayMode(.inline)
         }
         .onChange(of: viewModel.uiState.navigateNext) { _, navigateNext in
             if navigateNext {
                 viewModel.onNavigateNextHandled()
-                onNavigateNext()
+                onSignUpSuccess()
             }
         }
         .sheet(isPresented: Binding(
@@ -109,6 +142,18 @@ struct ProfileSetupView: View {
                 ),
                 onDismiss: viewModel.dismissDatePicker
             )
+        }
+    }
+
+    @ViewBuilder
+    private func passwordRequirement(_ label: String, met: Bool) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: met ? "checkmark.circle.fill" : "xmark.circle")
+                .foregroundStyle(met ? .green : .red)
+                .font(.caption)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(met ? Color.secondary : Color.red)
         }
     }
 
