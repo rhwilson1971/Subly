@@ -1,6 +1,7 @@
 package net.cynreub.subly.ui.settings
 
 import app.cash.turbine.test
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -9,7 +10,9 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import net.cynreub.subly.data.preferences.NotificationPreferences
 import net.cynreub.subly.data.preferences.PreferencesManager
+import net.cynreub.subly.data.preferences.StorageProviderPreference
 import net.cynreub.subly.data.preferences.ThemePreference
+import net.cynreub.subly.domain.repository.AuthRepository
 import net.cynreub.subly.notification.NotificationScheduler
 import net.cynreub.subly.notification.PermissionHandler
 import net.cynreub.subly.util.MainCoroutineRule
@@ -30,6 +33,7 @@ class SettingsViewModelTest {
     private val preferencesManager: PreferencesManager = mockk(relaxed = true)
     private val notificationScheduler: NotificationScheduler = mockk(relaxed = true)
     private val permissionHandler: PermissionHandler = mockk()
+    private val authRepository: AuthRepository = mockk()
 
     private val defaultPreferences = NotificationPreferences(
         notificationsEnabled = true,
@@ -42,13 +46,22 @@ class SettingsViewModelTest {
     fun setUp() {
         every { preferencesManager.notificationPreferences } returns flowOf(defaultPreferences)
         every { preferencesManager.themePreference } returns flowOf(ThemePreference.SYSTEM)
+        every { preferencesManager.storageProviderPreference } returns flowOf(StorageProviderPreference.LOCAL)
+        every { preferencesManager.googleDriveAccountEmail } returns flowOf(null)
+        every { preferencesManager.dropboxCredential } returns flowOf(null)
+        every { preferencesManager.oneDriveAccountEmail } returns flowOf(null)
         every { permissionHandler.isNotificationPermissionGranted() } returns true
+        every { authRepository.currentUser } returns null
     }
 
     private fun createViewModel() = SettingsViewModel(
         preferencesManager,
         notificationScheduler,
-        permissionHandler
+        permissionHandler,
+        mockk(relaxed = true),
+        mockk(relaxed = true),
+        mockk(relaxed = true),
+        authRepository
     )
 
     // ── Load settings ──────────────────────────────────────────────────────────
@@ -330,6 +343,98 @@ class SettingsViewModelTest {
 
             val state = awaitItem()
             assertFalse(state.hasNotificationPermission)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    // ── Account / sign-up gating ───────────────────────────────────────────────
+
+    @Test
+    fun `onStorageProviderChange to FIREBASE without an account requires sign up`() = runTest {
+        every { authRepository.currentUser } returns null
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem()
+
+            viewModel.onStorageProviderChange(net.cynreub.subly.data.preferences.StorageProviderPreference.FIREBASE)
+
+            val state = awaitItem()
+            assertTrue(state.requiresSignUp)
+            coVerify(exactly = 0) { preferencesManager.updateStorageProvider(any()) }
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `onStorageProviderChange to FIREBASE with an account saves preference`() = runTest {
+        every { authRepository.currentUser } returns net.cynreub.subly.domain.model.User(
+            uid = "user-1", email = "test@example.com", displayName = null
+        )
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem()
+
+            viewModel.onStorageProviderChange(net.cynreub.subly.data.preferences.StorageProviderPreference.FIREBASE)
+
+            coVerify { preferencesManager.updateStorageProvider(net.cynreub.subly.data.preferences.StorageProviderPreference.FIREBASE) }
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `refreshAccountState reflects signed-out state`() = runTest {
+        every { authRepository.currentUser } returns null
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            val state = awaitItem()
+            assertFalse(state.isSignedIn)
+            assertNull(state.accountEmail)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `signOut signs out, resets storage to LOCAL, and refreshes account state`() = runTest {
+        every { authRepository.currentUser } returns net.cynreub.subly.domain.model.User(
+            uid = "user-1", email = "test@example.com", displayName = null
+        )
+        coEvery { authRepository.signOut() } returns Unit
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            val loaded = awaitItem()
+            assertTrue(loaded.isSignedIn)
+
+            every { authRepository.currentUser } returns null
+            viewModel.signOut()
+
+            coVerify { authRepository.signOut() }
+            coVerify { preferencesManager.updateStorageProvider(net.cynreub.subly.data.preferences.StorageProviderPreference.LOCAL) }
+
+            val state = awaitItem()
+            assertFalse(state.isSignedIn)
+            assertNull(state.accountEmail)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `dismissSignUpPrompt clears requiresSignUp flag`() = runTest {
+        every { authRepository.currentUser } returns null
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem()
+
+            viewModel.onStorageProviderChange(net.cynreub.subly.data.preferences.StorageProviderPreference.FIREBASE)
+            assertTrue(awaitItem().requiresSignUp)
+
+            viewModel.dismissSignUpPrompt()
+            assertFalse(awaitItem().requiresSignUp)
+
             cancelAndIgnoreRemainingEvents()
         }
     }

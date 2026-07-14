@@ -17,6 +17,7 @@ import net.cynreub.subly.data.preferences.ThemePreference
 import net.cynreub.subly.data.remote.dropbox.DropboxAuthManager
 import net.cynreub.subly.data.remote.gdrive.GoogleDriveAuthManager
 import net.cynreub.subly.data.remote.onedrive.MsalAuthManager
+import net.cynreub.subly.domain.repository.AuthRepository
 import net.cynreub.subly.notification.NotificationScheduler
 import net.cynreub.subly.notification.PermissionHandler
 import javax.inject.Inject
@@ -28,7 +29,8 @@ class SettingsViewModel @Inject constructor(
     private val permissionHandler: PermissionHandler,
     private val googleDriveAuthManager: GoogleDriveAuthManager,
     private val dropboxAuthManager: DropboxAuthManager,
-    private val msalAuthManager: MsalAuthManager
+    private val msalAuthManager: MsalAuthManager,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -36,6 +38,14 @@ class SettingsViewModel @Inject constructor(
 
     init {
         loadSettings()
+        refreshAccountState()
+    }
+
+    fun refreshAccountState() {
+        _uiState.value = _uiState.value.copy(
+            isSignedIn = authRepository.currentUser != null,
+            accountEmail = authRepository.currentUser?.email
+        )
     }
 
     private fun loadSettings() {
@@ -157,7 +167,15 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun onStorageProviderChange(provider: StorageProviderPreference) {
+        if (provider == StorageProviderPreference.FIREBASE && authRepository.currentUser == null) {
+            _uiState.value = _uiState.value.copy(requiresSignUp = true)
+            return
+        }
         viewModelScope.launch { preferencesManager.updateStorageProvider(provider) }
+    }
+
+    fun dismissSignUpPrompt() {
+        _uiState.value = _uiState.value.copy(requiresSignUp = false)
     }
 
     // --- Google Drive ---
@@ -176,7 +194,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             googleDriveAuthManager.buildSignInClient().signOut()
             preferencesManager.updateGoogleDriveAccountEmail(null)
-            preferencesManager.updateStorageProvider(StorageProviderPreference.FIREBASE)
+            preferencesManager.updateStorageProvider(fallbackProvider())
         }
     }
 
@@ -188,7 +206,7 @@ class SettingsViewModel @Inject constructor(
     fun disconnectDropbox() {
         viewModelScope.launch {
             preferencesManager.updateDropboxCredential(null)
-            preferencesManager.updateStorageProvider(StorageProviderPreference.FIREBASE)
+            preferencesManager.updateStorageProvider(fallbackProvider())
         }
     }
 
@@ -198,7 +216,19 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             msalAuthManager.signOut()
             preferencesManager.updateOneDriveAccountEmail(null)
-            preferencesManager.updateStorageProvider(StorageProviderPreference.FIREBASE)
+            preferencesManager.updateStorageProvider(fallbackProvider())
+        }
+    }
+
+    /** FIREBASE only makes sense with an active account; otherwise drop to LOCAL. */
+    private fun fallbackProvider(): StorageProviderPreference =
+        if (authRepository.currentUser != null) StorageProviderPreference.FIREBASE else StorageProviderPreference.LOCAL
+
+    fun signOut() {
+        viewModelScope.launch {
+            authRepository.signOut()
+            preferencesManager.updateStorageProvider(StorageProviderPreference.LOCAL)
+            refreshAccountState()
         }
     }
 
