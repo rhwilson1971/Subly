@@ -61,6 +61,7 @@ import java.util.Locale
 @Composable
 fun StorageProviderScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToSignUp: () -> Unit,
     viewModel: StorageProviderViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -279,6 +280,30 @@ fun StorageProviderScreen(
                     Spacer(Modifier.width(8.dp))
                     TextButton(onClick = { viewModel.switchWithoutMigration() }) { Text("Just Switch") }
                 }
+            }
+        )
+    }
+
+    // Sign-up prompt — shown when the user taps Firebase/Cloud without an account
+    if (uiState.requiresSignUp) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissSignUpPrompt() },
+            icon = { Icon(Icons.Default.Cloud, contentDescription = null) },
+            title = { Text("Create an account") },
+            text = {
+                Text(
+                    "Cloud sync uses your Subly account. Create one to enable it — " +
+                    "your data stays local until you do."
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.dismissSignUpPrompt()
+                    onNavigateToSignUp()
+                }) { Text("Create Account") }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissSignUpPrompt() }) { Text("Not Now") }
             }
         )
     }
