@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
 
             SublyTheme(themePreference = themePreference) {
                 if (!startupState.isReady) {
-                    // Blank loading screen while Firestore profile is fetched
+                    // Blank loading screen while the local onboarding flag is read
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
