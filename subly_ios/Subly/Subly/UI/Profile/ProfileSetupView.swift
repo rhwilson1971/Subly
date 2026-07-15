@@ -3,6 +3,7 @@ import SwiftUI
 struct ProfileSetupView: View {
     let onNavigateToLogin: () -> Void
     let onSignUpSuccess: () -> Void
+    let onCancel: () -> Void
 
     @State private var viewModel: ProfileSetupViewModel
 
@@ -10,10 +11,12 @@ struct ProfileSetupView: View {
         authRepository: AuthRepository,
         userProfileRepository: UserProfileRepository,
         onNavigateToLogin: @escaping () -> Void,
-        onSignUpSuccess: @escaping () -> Void
+        onSignUpSuccess: @escaping () -> Void,
+        onCancel: @escaping () -> Void
     ) {
         self.onNavigateToLogin = onNavigateToLogin
         self.onSignUpSuccess = onSignUpSuccess
+        self.onCancel = onCancel
         _viewModel = State(initialValue: ProfileSetupViewModel(
             authRepository: authRepository,
             userProfileRepository: userProfileRepository
@@ -124,6 +127,11 @@ struct ProfileSetupView: View {
             }
             .navigationTitle("Create Your Profile")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onCancel)
+                }
+            }
         }
         .onChange(of: viewModel.uiState.navigateNext) { _, navigateNext in
             if navigateNext {

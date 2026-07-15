@@ -9,11 +9,15 @@ struct SettingsUiState {
     var reminderDaysBefore: Int = 2
 
     var selectedTheme: ThemePreference = .system
-    var selectedStorageProvider: StorageProviderPreference = .firebase
+    var selectedStorageProvider: StorageProviderPreference = .local
 
     var showMorningTimePicker: Bool = false
     var showEveningTimePicker: Bool = false
     var showSignOutConfirmation: Bool = false
+
+    var isSignedIn: Bool = false
+    var accountEmail: String? = nil
+    var requiresSignUp: Bool = false
 
     var error: String? = nil
 }
