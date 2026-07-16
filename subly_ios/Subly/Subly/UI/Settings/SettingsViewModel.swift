@@ -19,7 +19,9 @@ final class SettingsViewModel {
             eveningReminderTime: prefs.eveningReminderTime,
             reminderDaysBefore: prefs.reminderDaysBefore,
             selectedTheme: prefs.theme,
-            selectedStorageProvider: prefs.storageProvider
+            selectedStorageProvider: prefs.storageProvider,
+            isSignedIn: authRepository.currentUser != nil,
+            accountEmail: authRepository.currentUser?.email
         )
     }
 
@@ -68,13 +70,29 @@ final class SettingsViewModel {
     // MARK: - Storage
 
     func onStorageProviderChange(_ provider: StorageProviderPreference) {
+        if provider == .firebase && authRepository.currentUser == nil {
+            uiState.requiresSignUp = true
+            return
+        }
         prefs.storageProvider = provider
         uiState.selectedStorageProvider = provider
     }
 
+    func dismissSignUpPrompt() {
+        uiState.requiresSignUp = false
+    }
+
     // MARK: - Account
+
+    func refreshAccountState() {
+        uiState.isSignedIn = authRepository.currentUser != nil
+        uiState.accountEmail = authRepository.currentUser?.email
+    }
 
     func signOut() async {
         await authRepository.signOut()
+        prefs.storageProvider = .local
+        uiState.selectedStorageProvider = .local
+        refreshAccountState()
     }
 }

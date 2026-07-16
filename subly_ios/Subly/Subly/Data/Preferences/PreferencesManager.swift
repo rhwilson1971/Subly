@@ -63,9 +63,10 @@ final class PreferencesManager: ObservableObject {
     @AppStorage("eveningReminderEnabled")  var eveningReminderEnabled: Bool = false
     @AppStorage("morningReminderTime")     var morningReminderTime: String = "09:00"
     @AppStorage("eveningReminderTime")     var eveningReminderTime: String = "18:00"
+    @AppStorage("hasCompletedOnboarding")  var hasCompletedOnboarding: Bool = false
     @AppStorage("reminderDaysBefore")      var reminderDaysBefore: Int = 2
     @AppStorage("theme")                   private var _theme: String = ThemePreference.system.rawValue
-    @AppStorage("storageProvider")         private var _storageProvider: String = StorageProviderPreference.firebase.rawValue
+    @AppStorage("storageProvider")         private var _storageProvider: String = StorageProviderPreference.local.rawValue
 
     var theme: ThemePreference {
         get { ThemePreference(rawValue: _theme) ?? .system }
@@ -73,7 +74,7 @@ final class PreferencesManager: ObservableObject {
     }
 
     var storageProvider: StorageProviderPreference {
-        get { StorageProviderPreference(rawValue: _storageProvider) ?? .firebase }
+        get { StorageProviderPreference(rawValue: _storageProvider) ?? .local }
         set { _storageProvider = newValue.rawValue }
     }
 

@@ -109,7 +109,15 @@ class StorageProviderViewModel @Inject constructor(
      */
     fun onProviderSelected(provider: StorageProviderPreference) {
         if (provider == _uiState.value.selectedProvider) return
+        if (provider == StorageProviderPreference.FIREBASE && FirebaseAuth.getInstance().currentUser == null) {
+            _uiState.value = _uiState.value.copy(requiresSignUp = true)
+            return
+        }
         _uiState.value = _uiState.value.copy(pendingProvider = provider)
+    }
+
+    fun dismissSignUpPrompt() {
+        _uiState.value = _uiState.value.copy(requiresSignUp = false)
     }
 
     fun dismissMigrationDialog() {
@@ -120,17 +128,21 @@ class StorageProviderViewModel @Inject constructor(
     fun migrateAndSwitch() {
         val target = _uiState.value.pendingProvider ?: return
         val currentPreference = _uiState.value.selectedProvider
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+
+        if (target == StorageProviderPreference.FIREBASE && uid == null) {
+            _uiState.value = _uiState.value.copy(pendingProvider = null, requiresSignUp = true)
+            return
+        }
+
         _uiState.value = _uiState.value.copy(pendingProvider = null)
         viewModelScope.launch {
             val source = delegatingSyncProvider.providerFor(currentPreference)
             val destination = delegatingSyncProvider.providerFor(target)
-            val uid = FirebaseAuth.getInstance().currentUser?.uid ?: ""
             runCatching {
-                syncMigrator.migrate(source, destination, uid)
-                // Only switch preference after migration succeeds
+                syncMigrator.migrate(source, destination, uid.orEmpty())
                 preferencesManager.updateStorageProvider(target)
             }.onFailure {
-                // Migration failure is surfaced via observeMigrationProgress; stay on current provider
                 syncMigrator.reset()
             }
         }
@@ -190,7 +202,7 @@ class StorageProviderViewModel @Inject constructor(
         viewModelScope.launch {
             googleDriveAuthManager.buildSignInClient().signOut()
             preferencesManager.updateGoogleDriveAccountEmail(null)
-            preferencesManager.updateStorageProvider(StorageProviderPreference.FIREBASE)
+            preferencesManager.updateStorageProvider(fallbackProvider())
         }
     }
 
@@ -201,7 +213,7 @@ class StorageProviderViewModel @Inject constructor(
     fun disconnectDropbox() {
         viewModelScope.launch {
             preferencesManager.updateDropboxCredential(null)
-            preferencesManager.updateStorageProvider(StorageProviderPreference.FIREBASE)
+            preferencesManager.updateStorageProvider(fallbackProvider())
         }
     }
 
@@ -211,7 +223,15 @@ class StorageProviderViewModel @Inject constructor(
         viewModelScope.launch {
             msalAuthManager.signOut()
             preferencesManager.updateOneDriveAccountEmail(null)
-            preferencesManager.updateStorageProvider(StorageProviderPreference.FIREBASE)
+            preferencesManager.updateStorageProvider(fallbackProvider())
         }
     }
+
+    /** FIREBASE only makes sense with an active account; otherwise drop to LOCAL. */
+    private fun fallbackProvider(): StorageProviderPreference =
+        if (FirebaseAuth.getInstance().currentUser != null) {
+            StorageProviderPreference.FIREBASE
+        } else {
+            StorageProviderPreference.LOCAL
+        }
 }

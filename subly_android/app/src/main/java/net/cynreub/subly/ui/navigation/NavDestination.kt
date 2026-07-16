@@ -91,11 +91,6 @@ sealed class NavDestination(
         title = "Login"
     )
 
-    data object Register : NavDestination(
-        route = "register",
-        title = "Register"
-    )
-
     data object ProfileSetup : NavDestination(
         route = "profile_setup",
         title = "Profile Setup"

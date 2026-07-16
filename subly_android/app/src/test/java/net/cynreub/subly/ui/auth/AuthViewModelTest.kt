@@ -105,45 +105,6 @@ class AuthViewModelTest {
         }
     }
 
-    // ── Register ───────────────────────────────────────────────────────────────
-
-    @Test
-    fun `register success sets isAuthenticated true`() = runTest {
-        coEvery { authRepository.registerWithEmail(any(), any()) } returns Result.success(testUser)
-        val viewModel = createViewModel()
-
-        viewModel.uiState.test {
-            awaitItem()
-
-            viewModel.register("new@example.com", "newpass")
-
-            val done = awaitItem()
-            assertFalse(done.isLoading)
-            assertTrue(done.isAuthenticated)
-            assertNull(done.error)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `register failure sets error message`() = runTest {
-        coEvery { authRepository.registerWithEmail(any(), any()) } returns
-            Result.failure(RuntimeException("Email already in use"))
-        val viewModel = createViewModel()
-
-        viewModel.uiState.test {
-            awaitItem()
-
-            viewModel.register("existing@example.com", "pass")
-
-            val done = awaitItem()
-            assertFalse(done.isLoading)
-            assertFalse(done.isAuthenticated)
-            assertEquals("Email already in use", done.error)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
     // ── Sign in with Google ────────────────────────────────────────────────────
 
     @Test

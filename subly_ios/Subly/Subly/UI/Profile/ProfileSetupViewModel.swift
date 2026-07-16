@@ -1,24 +1,36 @@
 import Foundation
 import Observation
-import FirebaseAuth
 
 @Observable
 final class ProfileSetupViewModel {
     var uiState = ProfileSetupUiState()
 
+    private let authRepository: AuthRepository
     private let userProfileRepository: UserProfileRepository
+    private let prefs: PreferencesManager
 
-    init(userProfileRepository: UserProfileRepository) {
+    init(
+        authRepository: AuthRepository,
+        userProfileRepository: UserProfileRepository,
+        prefs: PreferencesManager = .shared
+    ) {
+        self.authRepository = authRepository
         self.userProfileRepository = userProfileRepository
-        if let firebaseUser = Auth.auth().currentUser {
-            uiState.email = firebaseUser.email ?? ""
-            uiState.fullName = firebaseUser.displayName ?? ""
-        }
+        self.prefs = prefs
+    }
+
+    func onEmailChange(_ value: String) {
+        uiState.email = value
+        uiState.emailError = nil
+    }
+
+    func onPasswordChange(_ value: String) {
+        uiState.password = value
+        uiState.passwordErrors = PasswordValidator.errors(value)
     }
 
     func onFullNameChange(_ value: String) {
         uiState.fullName = value
-        uiState.fullNameError = nil
     }
 
     func onPhoneNumberChange(_ value: String) {
@@ -35,16 +47,36 @@ final class ProfileSetupViewModel {
 
     func clearDateOfBirth() { uiState.dateOfBirth = nil }
 
-    func saveProfile() {
-        guard !uiState.fullName.trimmingCharacters(in: .whitespaces).isEmpty else {
-            uiState.fullNameError = "Full name is required"
+    func signUp() {
+        let isValidEmail = uiState.email.contains("@") && uiState.email.contains(".")
+        let passwordErrors = PasswordValidator.errors(uiState.password)
+
+        guard isValidEmail else {
+            uiState.emailError = "Enter a valid email address"
             return
         }
-        guard let uid = Auth.auth().currentUser?.uid else {
-            uiState.error = "Not signed in. Please log in again."
+        guard passwordErrors.isEmpty else {
+            uiState.passwordErrors = passwordErrors
             return
         }
 
+        Task { @MainActor in
+            uiState.isSaving = true
+            uiState.error = nil
+
+            let result = await authRepository.registerWithEmail(email: uiState.email, password: uiState.password)
+            switch result {
+            case .success(let authUser):
+                await saveProfileAndFinish(uid: authUser.uid)
+            case .failure(let error):
+                uiState.isSaving = false
+                uiState.error = error.localizedDescription
+            }
+        }
+    }
+
+    @MainActor
+    private func saveProfileAndFinish(uid: String) async {
         let dobString: String? = uiState.dateOfBirth.map { date in
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withFullDate]
@@ -53,26 +85,24 @@ final class ProfileSetupViewModel {
 
         let user = User(
             uid: uid,
-            email: uiState.email.isEmpty ? nil : uiState.email,
-            displayName: uiState.fullName,
-            fullName: uiState.fullName,
+            email: uiState.email,
+            displayName: uiState.fullName.isEmpty ? nil : uiState.fullName,
+            fullName: uiState.fullName.isEmpty ? nil : uiState.fullName,
             dateOfBirth: dobString,
             phoneNumber: uiState.phoneNumber.isEmpty ? nil : uiState.phoneNumber
         )
 
-        Task { @MainActor in
-            uiState.isSaving = true
-            uiState.error = nil
-            let result = await userProfileRepository.saveProfile(user)
-            switch result {
-            case .success:
-                uiState.isSaving = false
-                uiState.navigateNext = true
-            case .failure(let error):
-                uiState.isSaving = false
-                uiState.error = error.localizedDescription
-            }
+        // Best-effort — an account was already created; don't block the user on this write.
+        let saveResult = await userProfileRepository.saveProfile(user)
+        if case .failure(let error) = saveResult {
+            print("ProfileSetupViewModel: failed to save profile — \(error.localizedDescription)")
         }
+
+        prefs.storageProvider = .firebase
+        prefs.hasCompletedOnboarding = true
+
+        uiState.isSaving = false
+        uiState.navigateNext = true
     }
 
     func onNavigateNextHandled() { uiState.navigateNext = false }

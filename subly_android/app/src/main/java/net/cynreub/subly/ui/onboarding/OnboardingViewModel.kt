@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import net.cynreub.subly.data.preferences.PreferencesManager
 import net.cynreub.subly.domain.repository.UserProfileRepository
 import javax.inject.Inject
 
@@ -21,6 +22,7 @@ data class OnboardingUiState(
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val userProfileRepository: UserProfileRepository,
+    private val preferencesManager: PreferencesManager,
     private val auth: FirebaseAuth
 ) : ViewModel() {
 
@@ -31,24 +33,18 @@ class OnboardingViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(currentPage = page)
     }
 
+    /** Works whether or not the user has an account — onboarding is no longer auth-gated. */
     fun completeOnboarding() {
-        val uid = auth.currentUser?.uid ?: run {
-            _uiState.value = _uiState.value.copy(error = "Not signed in. Please log in again.")
-            return
-        }
-
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isCompleting = true, error = null)
-            userProfileRepository.markOnboardingCompleted(uid).fold(
-                onSuccess = {
-                    _uiState.value = _uiState.value.copy(isCompleting = false, navigateToHome = true)
-                },
-                onFailure = { e ->
-                    // Non-fatal — let the user proceed even if the write fails
-                    _uiState.value = _uiState.value.copy(isCompleting = false, navigateToHome = true)
-                    e.printStackTrace()
-                }
-            )
+
+            preferencesManager.updateHasCompletedOnboarding(true)
+
+            auth.currentUser?.uid?.let { uid ->
+                userProfileRepository.markOnboardingCompleted(uid).onFailure { it.printStackTrace() }
+            }
+
+            _uiState.value = _uiState.value.copy(isCompleting = false, navigateToHome = true)
         }
     }
 

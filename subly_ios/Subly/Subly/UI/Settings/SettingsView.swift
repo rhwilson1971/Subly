@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct SettingsView: View {
+    let onNavigateToSignUp: () -> Void
+    let onNavigateToLogin: () -> Void
+
     @EnvironmentObject private var services: ServiceContainer
     @State private var viewModel: SettingsViewModel?
     @State private var appVersion: String = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -19,6 +22,8 @@ struct SettingsView: View {
         .task {
             if viewModel == nil {
                 viewModel = SettingsViewModel(authRepository: services.authRepository)
+            } else {
+                viewModel?.refreshAccountState()
             }
         }
     }
@@ -50,7 +55,6 @@ struct SettingsView: View {
                 ))
 
                 if state.notificationsEnabled {
-                    // Morning reminder
                     HStack {
                         Toggle("Morning Reminder", isOn: Binding(
                             get: { state.morningReminderEnabled },
@@ -76,7 +80,6 @@ struct SettingsView: View {
                         .buttonStyle(.plain)
                     }
 
-                    // Evening reminder
                     Toggle("Evening Reminder", isOn: Binding(
                         get: { state.eveningReminderEnabled },
                         set: { viewModel.onEveningReminderEnabledChange($0) }
@@ -100,7 +103,6 @@ struct SettingsView: View {
                         .buttonStyle(.plain)
                     }
 
-                    // Reminder days slider
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
                             Text("Remind me")
@@ -146,10 +148,27 @@ struct SettingsView: View {
 
             // MARK: - Account
             Section("Account") {
-                Button(role: .destructive) {
-                    viewModel.uiState.showSignOutConfirmation = true
-                } label: {
-                    Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                if state.isSignedIn {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Signed in as \(state.accountEmail ?? "your account")")
+                        Text("Cloud sync is enabled for this account")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Button(role: .destructive) {
+                        viewModel.uiState.showSignOutConfirmation = true
+                    } label: {
+                        Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Your data is stored locally on this device")
+                        Text("Create an account to enable Cloud sync across devices")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Button("Create Account", action: onNavigateToSignUp)
+                    Button("Sign In", action: onNavigateToLogin)
                 }
             }
 
@@ -163,7 +182,6 @@ struct SettingsView: View {
                 }
             }
         }
-        // Morning time picker sheet
         .sheet(isPresented: Binding(
             get: { viewModel.uiState.showMorningTimePicker },
             set: { viewModel.uiState.showMorningTimePicker = $0 }
@@ -176,7 +194,6 @@ struct SettingsView: View {
             }
             .presentationDetents([.medium])
         }
-        // Evening time picker sheet
         .sheet(isPresented: Binding(
             get: { viewModel.uiState.showEveningTimePicker },
             set: { viewModel.uiState.showEveningTimePicker = $0 }
@@ -189,7 +206,6 @@ struct SettingsView: View {
             }
             .presentationDetents([.medium])
         }
-        // Sign out confirmation
         .confirmationDialog(
             "Sign Out",
             isPresented: Binding(
@@ -203,9 +219,20 @@ struct SettingsView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("You will be returned to the login screen.")
+            Text("Your data will stay on this device and stop syncing to the cloud.")
         }
-        // Error alert
+        .alert("Create an account", isPresented: Binding(
+            get: { viewModel.uiState.requiresSignUp },
+            set: { if !$0 { viewModel.dismissSignUpPrompt() } }
+        )) {
+            Button("Create Account") {
+                viewModel.dismissSignUpPrompt()
+                onNavigateToSignUp()
+            }
+            Button("Not Now", role: .cancel) { viewModel.dismissSignUpPrompt() }
+        } message: {
+            Text("Cloud sync uses your Subly account. Create one to enable it — your data stays local until you do.")
+        }
         .alert("Error", isPresented: Binding(
             get: { state.error != nil },
             set: { if !$0 { viewModel.uiState.error = nil } }
@@ -232,7 +259,6 @@ private struct TimePickerSheet: View {
         self.current = current
         self.onSelect = onSelect
 
-        // Parse "HH:mm" → Date
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
         _date = State(initialValue: formatter.date(from: current) ?? Date())
@@ -264,6 +290,6 @@ private struct TimePickerSheet: View {
 }
 
 #Preview {
-    SettingsView()
+    SettingsView(onNavigateToSignUp: {}, onNavigateToLogin: {})
         .environmentObject(ServiceContainer())
 }

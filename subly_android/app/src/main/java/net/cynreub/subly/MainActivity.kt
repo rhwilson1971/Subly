@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
 
             SublyTheme(themePreference = themePreference) {
                 if (!startupState.isReady) {
-                    // Blank loading screen while Firestore profile is fetched
+                    // Blank loading screen while the local onboarding flag is read
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -79,7 +79,6 @@ fun SublyApp(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val isAuthRoute = currentRoute == NavDestination.Login.route
-        || currentRoute == NavDestination.Register.route
         || currentRoute == NavDestination.ProfileSetup.route
         || currentRoute == NavDestination.Onboarding.route
 
@@ -92,7 +91,7 @@ fun SublyApp(
                 user = currentUser,
                 onSignOut = {
                     mainViewModel.signOut()
-                    navController.navigate(NavDestination.Login.route) {
+                    navController.navigate(NavDestination.Home.route) {
                         popUpTo(0) { inclusive = true }
                     }
                 }

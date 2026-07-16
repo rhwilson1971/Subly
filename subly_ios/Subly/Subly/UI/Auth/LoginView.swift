@@ -5,6 +5,7 @@ import FirebaseAuth
 struct LoginView: View {
     let onNavigateToRegister: () -> Void
     let onAuthSuccess: () -> Void
+    let onCancel: () -> Void
 
     @State private var viewModel: AuthViewModel
     @State private var email = ""
@@ -13,15 +14,23 @@ struct LoginView: View {
     init(
         authRepository: AuthRepository,
         onNavigateToRegister: @escaping () -> Void,
-        onAuthSuccess: @escaping () -> Void
+        onAuthSuccess: @escaping () -> Void,
+        onCancel: @escaping () -> Void
     ) {
         self.onNavigateToRegister = onNavigateToRegister
         self.onAuthSuccess = onAuthSuccess
+        self.onCancel = onCancel
         _viewModel = State(initialValue: AuthViewModel(authRepository: authRepository))
     }
 
     var body: some View {
         VStack(spacing: 0) {
+            HStack {
+                Spacer()
+                Button("Cancel", action: onCancel)
+                    .padding()
+            }
+
             Spacer()
 
             VStack(spacing: 24) {

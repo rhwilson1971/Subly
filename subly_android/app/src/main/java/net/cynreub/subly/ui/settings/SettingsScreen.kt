@@ -68,6 +68,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     onNavigateToStorageProvider: () -> Unit = {},
+    onNavigateToSignUp: () -> Unit = {},
+    onNavigateToLogin: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -100,6 +102,7 @@ fun SettingsScreen(
     // Refresh permission status when returning to screen
     LaunchedEffect(Unit) {
         viewModel.refreshPermissionStatus()
+        viewModel.refreshAccountState()
     }
 
     if (uiState.isLoading) {
@@ -393,6 +396,45 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        SettingsSection(title = "Account") {
+            Column(modifier = Modifier.padding(16.dp)) {
+                if (uiState.isSignedIn) {
+                    Text(
+                        text = "Signed in as ${uiState.accountEmail ?: "your account"}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Cloud sync is enabled for this account",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(onClick = { viewModel.signOut() }) {
+                        Text("Sign Out")
+                    }
+                } else {
+                    Text(
+                        text = "Your data is stored locally on this device",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Create an account to enable Cloud sync across devices",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = onNavigateToSignUp) { Text("Create Account") }
+                        OutlinedButton(onClick = onNavigateToLogin) { Text("Sign In") }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         // Default Reminder Days
         SettingsSection(title = "Defaults") {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
@@ -491,6 +533,29 @@ fun SettingsScreen(
                 TextButton(onClick = { viewModel.dismissPermissionDialog() }) {
                     Text("Cancel")
                 }
+            }
+        )
+    }
+
+    if (uiState.requiresSignUp) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissSignUpPrompt() },
+            icon = { Icon(Icons.Default.Cloud, contentDescription = null) },
+            title = { Text("Create an account") },
+            text = {
+                Text(
+                    "Cloud sync uses your Subly account. Create one to enable it — " +
+                    "your data stays local until you do."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.dismissSignUpPrompt()
+                    onNavigateToSignUp()
+                }) { Text("Create Account") }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissSignUpPrompt() }) { Text("Not Now") }
             }
         )
     }

@@ -36,6 +36,7 @@ class PreferencesManager @Inject constructor(
         val GOOGLE_DRIVE_ACCOUNT_EMAIL = stringPreferencesKey("google_drive_account_email")
         val DROPBOX_CREDENTIAL = stringPreferencesKey("dropbox_credential")
         val ONEDRIVE_ACCOUNT_EMAIL = stringPreferencesKey("onedrive_account_email")
+        val HAS_COMPLETED_ONBOARDING = booleanPreferencesKey("has_completed_onboarding")
     }
 
     val notificationPreferences: Flow<NotificationPreferences> = context.dataStore.data
@@ -115,6 +116,24 @@ class PreferencesManager @Inject constructor(
         }
     }
 
+    val hasCompletedOnboarding: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) {
+                emit(emptyPreferences())
+            } else {
+                throw exception
+            }
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.HAS_COMPLETED_ONBOARDING] ?: false
+        }
+
+    suspend fun updateHasCompletedOnboarding(completed: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.HAS_COMPLETED_ONBOARDING] = completed
+        }
+    }
+
     val storageProviderPreference: Flow<StorageProviderPreference> = context.dataStore.data
         .catch { exception ->
             if (exception is IOException) {
@@ -129,7 +148,8 @@ class PreferencesManager @Inject constructor(
                 "GOOGLE_DRIVE" -> StorageProviderPreference.GOOGLE_DRIVE
                 "DROPBOX" -> StorageProviderPreference.DROPBOX
                 "ONEDRIVE" -> StorageProviderPreference.ONEDRIVE
-                else -> StorageProviderPreference.FIREBASE
+                "FIREBASE" -> StorageProviderPreference.FIREBASE
+                else -> StorageProviderPreference.LOCAL
             }
         }
 
