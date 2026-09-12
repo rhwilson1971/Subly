@@ -104,7 +104,7 @@ fun SublyApp(
         SublyNavHost(
             navController = navController,
             startDestination = startDestination,
-            onAuthSuccess = {},
+            onAuthSuccess = { mainViewModel.refreshCurrentUser() },
             modifier = Modifier.padding(innerPadding)
         )
     }
