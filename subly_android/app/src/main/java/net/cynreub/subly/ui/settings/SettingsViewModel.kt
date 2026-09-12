@@ -66,7 +66,11 @@ class SettingsViewModel @Inject constructor(
                 Triple(driveEmail, dropboxCred, oneDriveEmail)
             }
             combine(coreFlow, cloudFlow) { (notifications, theme, storageProvider), (driveEmail, dropboxCred, oneDriveEmail) ->
-                SettingsUiState(
+                // Merge into the current state rather than constructing a fresh SettingsUiState —
+                // a fresh instance would silently reset isSignedIn/accountEmail/requiresSignUp
+                // (and dialog-visibility flags) to their defaults on every emission, including
+                // ones triggered by unrelated preference changes after refreshAccountState() ran.
+                _uiState.value.copy(
                     notificationsEnabled = notifications.notificationsEnabled,
                     morningNotificationTime = notifications.morningNotificationTime,
                     eveningNotificationTime = notifications.eveningNotificationTime,

@@ -58,6 +58,16 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Re-reads the signed-in user after a successful sign-in/sign-up. Login and
+     * ProfileSetup both create/authenticate the Firebase user directly through
+     * AuthRepository, bypassing this ViewModel, so currentUser would otherwise
+     * stay stale (null) until the app is restarted.
+     */
+    fun refreshCurrentUser() {
+        _currentUser.value = authRepository.currentUser
+    }
+
     fun signOut() {
         viewModelScope.launch {
             authRepository.signOut()
